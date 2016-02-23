@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 /*
  * This class was initially copied and modified from the codahale metrics project.
  *

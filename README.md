@@ -63,7 +63,7 @@ See and run [examples](examples/src/main/java/com/spotify/metrics/example).
 
 If you find yourself in a situation where you create many instances of this
 class (i.e. when reporting metrics), make use of
-[MetricIdCache](core/src/main/java/com/spotify/metrics/core/MetricIdCache.java)
+[MetricIdCache](api/src/main/java/com/spotify/metrics/core/MetricIdCache.java)
 
 The following is an example integrating with Guava.
 

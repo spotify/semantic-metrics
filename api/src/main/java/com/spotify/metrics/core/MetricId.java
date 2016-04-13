@@ -333,7 +333,7 @@ public class MetricId implements Comparable<MetricId> {
         final Iterator<Map.Entry<String, String>> li = left.iterator();
         final Iterator<Map.Entry<String, String>> ri = right.iterator();
 
-        if (li.hasNext()) {
+        while (li.hasNext()) {
             if (!ri.hasNext()) {
                 return -1;
             }

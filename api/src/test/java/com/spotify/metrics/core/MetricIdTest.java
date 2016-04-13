@@ -97,6 +97,21 @@ public class MetricIdTest {
     }
 
     @Test
+    public void testCompareToMultipleTags() {
+      final MetricId a = MetricId.EMPTY.tagged("a", "1", "b", "2");
+      final MetricId b = MetricId.EMPTY.tagged("a", "1", "b", "3");
+      final MetricId c = MetricId.EMPTY.tagged("a", "1", "b", "3");
+
+      assertTrue(a.compareTo(a) == 0);
+      assertTrue(a.compareTo(b) != 0);
+      assertTrue(b.compareTo(b) == 0);
+      assertTrue(b.compareTo(a) != 0);
+
+      assertTrue(b.compareTo(c) == 0);
+      assertTrue(c.compareTo(b) == 0);
+    }
+
+  @Test
     public void testEqualsAndHashCode() {
         // a map which always returns the same hashCode, but is equal to nothing.
         final SortedMap<String, String> tags = new TreeMap<String, String>() {

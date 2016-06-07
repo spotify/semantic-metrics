@@ -24,6 +24,7 @@ package com.spotify.metrics.example;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricRegistry;
 import com.spotify.metrics.ffwd.FastForwardReporter;
+import com.spotify.metrics.jvm.CpuGaugeSet;
 import com.spotify.metrics.jvm.GarbageCollectorMetricSet;
 import com.spotify.metrics.jvm.MemoryUsageGaugeSet;
 import com.spotify.metrics.jvm.ThreadStatesMetricSet;
@@ -45,6 +46,7 @@ public class JvmExample {
         registry.register(MetricId.build("jvm-memory"), new MemoryUsageGaugeSet());
         registry.register(MetricId.build("jvm-gc"), new GarbageCollectorMetricSet());
         registry.register(MetricId.build("jvm-threads"), new ThreadStatesMetricSet());
+        registry.register(MetricId.build("jvm-cpu"), CpuGaugeSet.create());
 
         final FastForwardReporter reporter = FastForwardReporter
             .forRegistry(registry)

@@ -30,31 +30,31 @@ public class CpuGaugeSet implements SemanticMetricSet {
 
     final com.sun.management.OperatingSystemMXBean osMxBean = (com.sun.management.OperatingSystemMXBean) operatingSystemMXBean;
 
-    final Map<MetricId, Metric> gauges = new HashMap<MetricId, Metric>();
+    final Map<MetricId, Metric> gauges = new HashMap<>();
     final MetricId cpu = MetricId.build().tagged("what", "jvm-cpu-stats");
 
-    gauges.put(cpu.tagged("load", "process"), new Gauge<Double>() {
+    gauges.put(cpu.tagged("what", "process-cpu-load-percentage", "unit", "%"), new Gauge<Double>() {
       @Override
       public Double getValue() {
         return osMxBean.getProcessCpuLoad();
       }
     });
 
-    gauges.put(cpu.tagged("load", "system"), new Gauge<Double>() {
+    gauges.put(cpu.tagged("what", "system-cpu-load-percentage", "unit", "%"), new Gauge<Double>() {
       @Override
       public Double getValue() {
         return osMxBean.getSystemCpuLoad();
       }
     });
 
-    gauges.put(cpu.tagged("load", "system-average"), new Gauge<Double>() {
+    gauges.put(cpu.tagged("what", "system-load-average"), new Gauge<Double>() {
       @Override
       public Double getValue() {
         return osMxBean.getSystemLoadAverage();
       }
     });
 
-    gauges.put(cpu.tagged("cpu", "process-cpu-time"), new Gauge<Long>() {
+    gauges.put(cpu.tagged("what", "process-cpu-time", "unit", "ns"), new Gauge<Long>() {
       @Override
       public Long getValue() {
         return osMxBean.getProcessCpuTime();

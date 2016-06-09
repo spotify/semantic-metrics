@@ -83,7 +83,7 @@ public interface SemanticMetricBuilder<T extends Metric> {
     SemanticMetricBuilder<DerivingMeter> DERIVING_METERS =
         new SemanticMetricBuilder<DerivingMeter>() {
             @Override
-            public DerivingMeter newMetric() {
+            public DelegatingDerivingMeter newMetric() {
                 return new DelegatingDerivingMeter(new Meter());
             }
 

@@ -44,6 +44,7 @@
     <module>ffwd-reporter</module>
     <module>examples</module>
     <module>guava</module>
+    <module>remote</module>
   </modules>
 
   <properties>
@@ -104,6 +105,26 @@
         <artifactId>mockito-core</artifactId>
         <version>1.9.5</version>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <version>3.3.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>mockwebserver</artifactId>
+        <version>3.3.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.spotify</groupId>
+        <artifactId>futures-extra</artifactId>
+        <version>2.6.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>2.7.4</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

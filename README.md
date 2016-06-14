@@ -43,7 +43,7 @@ Add a dependency in maven.
 <dependency>
   <groupId>com.spotify.metrics</groupId>
   <artifactId>semantic-metrics-core</artifactId>
-  <version>0.2.3</version>
+  <version>${semantic-metrics.version}</version>
 </dependency>
 ```
 

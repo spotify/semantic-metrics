@@ -68,7 +68,7 @@ public class OkRemote implements Remote {
         final RequestBody body = RequestBody.create(JSON, jsonStr);
         final Request request = new Request.Builder()
                 .url(url)
-                .addHeader("X-Shard-Key", shardKey)
+                .addHeader(Sharder.SHARD_KEY, shardKey)
                 .post(body)
                 .build();
         final SettableFuture<Integer> result = SettableFuture.create();

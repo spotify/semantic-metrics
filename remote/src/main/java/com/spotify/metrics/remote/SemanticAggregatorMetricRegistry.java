@@ -23,10 +23,7 @@ package com.spotify.metrics.remote;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.spotify.metrics.core.MetricId;
-import com.spotify.metrics.core.RemoteMeter;
-import com.spotify.metrics.core.RemoteMetric;
-import com.spotify.metrics.core.RemoteSemanticMetricRegistry;
+import com.spotify.metrics.core.*;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -87,11 +84,33 @@ public class SemanticAggregatorMetricRegistry implements RemoteSemanticMetricReg
         return (T) previous;
     }
 
+    @Override
     public RemoteMeter meter(final MetricId name) {
         return meter(name, ImmutableList.of("what"));
     }
 
+    @Override
+    public RemoteDerivingMeter derivingMeter(MetricId name, List<String> shardKey) {
+        return getOrAdd(name, shardKey, SemanticAggregatorMetricBuilder.REMOTE_DERIVING_METERS);
+    }
+
+    @Override
+    public RemoteDerivingMeter derivingMeter(MetricId name) {
+        return derivingMeter(name, ImmutableList.of("what"));
+    }
+
+    @Override
     public RemoteMeter meter(final MetricId name, final List<String> shardKey) {
         return getOrAdd(name, shardKey, SemanticAggregatorMetricBuilder.REMOTE_METERS);
+    }
+
+    @Override
+    public RemoteCounter counter(MetricId name) {
+        return counter(name, ImmutableList.of("what"));
+    }
+
+    @Override
+    public RemoteCounter counter(MetricId name, List<String> shardKey) {
+        return getOrAdd(name, shardKey, SemanticAggregatorMetricBuilder.REMOTE_COUNTERS);
     }
 }

@@ -66,6 +66,7 @@
     <module name="SimplifyBooleanExpression"/>
     <module name="ArrayTypeStyle"/>
     <module name="UpperEll"/>
+    <module name="Indentation"/>
   </module>
 
   <module name="Header">

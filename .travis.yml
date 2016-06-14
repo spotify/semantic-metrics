@@ -9,9 +9,5 @@ cache:
     - $HOME/.m2
     - .cache
 
-# override default command since it doesn't skip checkstyle
-install:
-  - tools/install-repackaged
-
 script:
   - mvn -D environment=test verify

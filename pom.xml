@@ -117,6 +117,13 @@
             <artifactId>maven-source-plugin</artifactId>
           </plugin>
           <plugin>
+            <artifactId>maven-release-plugin</artifactId>
+            <version>2.5.3</version>
+            <configuration>
+              <tagNameFormat>@{project.version}</tagNameFormat>
+            </configuration>
+          </plugin>
+          <plugin>
             <artifactId>maven-javadoc-plugin</artifactId>
             <version>2.10.4</version>
             <configuration>
@@ -174,15 +181,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.1</version>
-        <configuration>
-          <tagNameFormat>@{project.version}</tagNameFormat>
-          <username>git</username>
-          <pushChanges>false</pushChanges>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

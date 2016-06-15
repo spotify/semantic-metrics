@@ -33,13 +33,23 @@ import java.util.List;
  */
 public interface RemoteSemanticMetricRegistry {
     /**
-     * Creates a new {@link RemoteMeter} and registers it under the given name.
+     * Creates a new {@link RemoteCounter} and registers it under the given name.
      * Sharding uses the "what"-tag of the metric Id.
      *
      * @param name the name of the metric
-     * @return a new {@link RemoteMeter}
+     * @return a new {@link RemoteCounter}
      */
-    RemoteMeter meter(final MetricId name);
+    RemoteCounter counter(final MetricId name);
+
+    /**
+     * Creates a new {@link RemoteCounter} and registers it under the given name.
+     * Sharding uses the "what"-tag of the metric Id.
+     *
+     * @param name the name of the metric
+     * @param shardKey the list of tags to be used for sharding
+     * @return a new {@link RemoteCounter}
+     */
+    RemoteCounter counter(final MetricId name, final List<String> shardKey);
 
     /**
      * Creates a new {@link RemoteMeter} and registers it under the given name.
@@ -66,25 +76,32 @@ public interface RemoteSemanticMetricRegistry {
      * @param shardKey the list of tags to be used for sharding
      * @return a new {@link RemoteMeter}
      */
-    RemoteMeter meter(final MetricId name, final List<String> shardKey);
+    RemoteHistogram histogram(final MetricId name, final List<String> shardKey);
+
     /**
-     * Creates a new {@link RemoteCounter} and registers it under the given name.
+     * Creates a new {@link RemoteMeter} and registers it under the given name.
      * Sharding uses the "what"-tag of the metric Id.
      *
      * @param name the name of the metric
-     * @return a new {@link RemoteCounter}
+     * @return a new {@link RemoteMeter}
      */
-    RemoteCounter counter(final MetricId name);
+    RemoteHistogram histogram(final MetricId name);
 
     /**
-     * Creates a new {@link RemoteCounter} and registers it under the given name.
-     * Sharding uses the "what"-tag of the metric Id.
+     * Creates a new {@link RemoteMeter} and registers it under the given name.
      *
      * @param name the name of the metric
      * @param shardKey the list of tags to be used for sharding
-     * @return a new {@link RemoteCounter}
+     * @return a new {@link RemoteMeter}
      */
-    RemoteCounter counter(final MetricId name, final List<String> shardKey);
+    RemoteMeter meter(final MetricId name, final List<String> shardKey);
 
-
+    /**
+     * Creates a new {@link RemoteMeter} and registers it under the given name.
+     * Sharding uses the "what"-tag of the metric Id.
+     *
+     * @param name the name of the metric
+     * @return a new {@link RemoteMeter}
+     */
+    RemoteMeter meter(final MetricId name);
 }

@@ -19,31 +19,11 @@
  * under the License.
  */
 
-package com.spotify.metrics.remote;
-
-import com.google.common.collect.ImmutableMap;
-import com.spotify.metrics.core.MetricId;
-
-import java.util.Map;
+package com.spotify.metrics.core;
 
 /**
- * Utilities around building json blobs for sending to semantic aggregator.
+ * Like a coda hale Histogram, but remoter.
  */
-public class SemanticAggregator {
-
-    public static Map<String, String> buildAttributes(MetricId id, String type) {
-        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
-        builder.putAll(id.getTags());
-        builder.put("metric_type", type);
-        return builder.build();
-    }
-
-    public static Map<String, Object> buildDocument(
-            String value, String key, Map<String, String> allAttributes) {
-        return ImmutableMap.of(
-                "type", "metric",
-                "value", value,
-                "key", key,
-                "attributes", allAttributes);
-    }
+public interface RemoteHistogram extends RemoteMetric {
+    void update(long value);
 }

@@ -21,7 +21,12 @@
 
 package com.spotify.metrics.remote;
 
-import com.spotify.metrics.core.*;
+import com.spotify.metrics.core.RemoteCounter;
+import com.spotify.metrics.core.RemoteHistogram;
+import com.spotify.metrics.core.RemoteMeter;
+import com.spotify.metrics.core.RemoteDerivingMeter;
+import com.spotify.metrics.core.RemoteMetric;
+import com.spotify.metrics.core.MetricId;
 
 import java.util.List;
 import java.util.Map;
@@ -33,132 +38,165 @@ import java.util.Map;
  */
 public interface SemanticAggregatorMetricBuilder<T extends RemoteMetric> {
     SemanticAggregatorMetricBuilder<RemoteMeter> REMOTE_METERS =
-            new SemanticAggregatorMetricBuilder<RemoteMeter>() {
-                @Override
-                public RemoteMeter newMetric(
-                        final MetricId id,
-                        final List<String> shardKey,
-                        final Remote remote) {
+        new SemanticAggregatorMetricBuilder<RemoteMeter>() {
+            @Override
+            public RemoteMeter newMetric(
+                final MetricId id,
+                final List<String> shardKey,
+                final Remote remote) {
 
-                    final Map<String, String> allAttributes =
-                            SemanticAggregator.buildAttributes(id, "meter");
-                    final String shard =
-                            Sharder.buildShardKey(shardKey, allAttributes);
+                final Map<String, String> allAttributes =
+                    SemanticAggregator.buildAttributes(id, "meter");
+                final String shard =
+                    Sharder.buildShardKey(shardKey, allAttributes);
 
-                    return new RemoteMeter() {
-                        @Override
-                        public void mark() {
-                            mark(1);
-                        }
+                return new RemoteMeter() {
+                    @Override
+                    public void mark() {
+                        mark(1);
+                    }
 
-                        @Override
-                        public void mark(long n) {
-                            remote.post(
-                                    "/",
-                                    shard,
-                                    SemanticAggregator.buildDocument(
-                                            Long.toString(n),
-                                            id.getKey(),
-                                            allAttributes));
-                        }
+                    @Override
+                    public void mark(long n) {
+                        remote.post(
+                            "/",
+                            shard,
+                            SemanticAggregator.buildDocument(
+                                Long.toString(n),
+                                id.getKey(),
+                                allAttributes));
+                    }
 
-                    };
-                }
+                };
+            }
 
-                @Override
-                public boolean isInstance(final RemoteMetric metric) {
-                    return RemoteMeter.class.isInstance(metric);
-                }
-            };
+            @Override
+            public boolean isInstance(final RemoteMetric metric) {
+                return RemoteMeter.class.isInstance(metric);
+            }
+        };
 
     SemanticAggregatorMetricBuilder<RemoteCounter> REMOTE_COUNTERS =
-            new SemanticAggregatorMetricBuilder<RemoteCounter>() {
-                @Override
-                public RemoteCounter newMetric(
-                        final MetricId id,
-                        final List<String> shardKey,
-                        final Remote remote) {
+        new SemanticAggregatorMetricBuilder<RemoteCounter>() {
+            @Override
+            public RemoteCounter newMetric(
+                final MetricId id,
+                final List<String> shardKey,
+                final Remote remote) {
 
-                    final Map<String, String> allAttributes =
-                            SemanticAggregator.buildAttributes(id, "counter");
-                    final String shard =
-                            Sharder.buildShardKey(shardKey, allAttributes);
+                final Map<String, String> allAttributes =
+                    SemanticAggregator.buildAttributes(id, "counter");
+                final String shard =
+                    Sharder.buildShardKey(shardKey, allAttributes);
 
-                    return new RemoteCounter() {
+                return new RemoteCounter() {
 
-                        @Override
-                        public void inc() {
-                            inc(1);
-                        }
+                    @Override
+                    public void inc() {
+                        inc(1);
+                    }
 
-                        @Override
-                        public void inc(long n) {
-                            remote.post(
-                                    "/",
-                                    shard,
-                                    SemanticAggregator.buildDocument(
-                                            Long.toString(n),
-                                            id.getKey(),
-                                            allAttributes));
-                        }
+                    @Override
+                    public void inc(long n) {
+                        remote.post(
+                            "/",
+                            shard,
+                            SemanticAggregator.buildDocument(
+                                Long.toString(n),
+                                id.getKey(),
+                                allAttributes));
+                    }
 
-                        @Override
-                        public void dec() {
-                            inc(-1);
-                        }
+                    @Override
+                    public void dec() {
+                        inc(-1);
+                    }
 
-                        @Override
-                        public void dec(long n) {
-                            inc(-n);
-                        }
+                    @Override
+                    public void dec(long n) {
+                        inc(-n);
+                    }
 
-                    };
-                }
+                };
+            }
 
-                @Override
-                public boolean isInstance(final RemoteMetric metric) {
-                    return RemoteCounter.class.isInstance(metric);
-                }
-            };
+            @Override
+            public boolean isInstance(final RemoteMetric metric) {
+                return RemoteCounter.class.isInstance(metric);
+            }
+        };
 
     SemanticAggregatorMetricBuilder<RemoteDerivingMeter> REMOTE_DERIVING_METERS =
-            new SemanticAggregatorMetricBuilder<RemoteDerivingMeter>() {
-                @Override
-                public RemoteDerivingMeter newMetric(
-                        final MetricId id,
-                        final List<String> shardKey,
-                        final Remote remote) {
+        new SemanticAggregatorMetricBuilder<RemoteDerivingMeter>() {
+            @Override
+            public RemoteDerivingMeter newMetric(
+                final MetricId id,
+                final List<String> shardKey,
+                final Remote remote) {
 
-                    final Map<String, String> allAttributes =
-                            SemanticAggregator.buildAttributes(id, "deriving_meter");
-                    final String shard =
-                            Sharder.buildShardKey(shardKey, allAttributes);
+                final Map<String, String> allAttributes =
+                    SemanticAggregator.buildAttributes(id, "deriving_meter");
+                final String shard =
+                    Sharder.buildShardKey(shardKey, allAttributes);
 
-                    return new RemoteDerivingMeter() {
-                        @Override
-                        public void mark() {
-                            mark(1);
-                        }
+                return new RemoteDerivingMeter() {
+                    @Override
+                    public void mark() {
+                        mark(1);
+                    }
 
-                        @Override
-                        public void mark(long n) {
-                            remote.post(
-                                    "/",
-                                    shard,
-                                    SemanticAggregator.buildDocument(
-                                            Long.toString(n),
-                                            id.getKey(),
-                                            allAttributes));
-                        }
+                    @Override
+                    public void mark(long n) {
+                        remote.post(
+                            "/",
+                            shard,
+                            SemanticAggregator.buildDocument(
+                                Long.toString(n),
+                                id.getKey(),
+                                allAttributes));
+                    }
 
-                    };
-                }
+                };
+            }
 
-                @Override
-                public boolean isInstance(final RemoteMetric metric) {
-                    return RemoteDerivingMeter.class.isInstance(metric);
-                }
-            };
+            @Override
+            public boolean isInstance(final RemoteMetric metric) {
+                return RemoteDerivingMeter.class.isInstance(metric);
+            }
+        };
+
+    SemanticAggregatorMetricBuilder<RemoteHistogram> REMOTE_HISTOGRAM =
+        new SemanticAggregatorMetricBuilder<RemoteHistogram>() {
+            @Override
+            public RemoteHistogram newMetric(
+                final MetricId id,
+                final List<String> shardKey,
+                final Remote remote) {
+
+                final Map<String, String> allAttributes =
+                    SemanticAggregator.buildAttributes(id, "histogram");
+                final String shard =
+                    Sharder.buildShardKey(shardKey, allAttributes);
+
+                return new RemoteHistogram() {
+                    @Override
+                    public void update(long value) {
+                        remote.post(
+                            "/",
+                            shard,
+                            SemanticAggregator.buildDocument(
+                                Long.toString(value),
+                                id.getKey(),
+                                allAttributes));
+                    }
+                };
+            }
+
+            @Override
+            public boolean isInstance(final RemoteMetric metric) {
+                return RemoteHistogram.class.isInstance(metric);
+            }
+        };
 
     T newMetric(MetricId id, List<String> shardKey, Remote remote);
 

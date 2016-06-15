@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.RemoteDerivingMeter;
+import com.spotify.metrics.core.RemoteHistogram;
 import com.spotify.metrics.core.RemoteMeter;
 import org.junit.Before;
 import org.junit.Test;
@@ -170,4 +171,39 @@ public class SemanticAggregatorMetricRegistryTest {
         RemoteDerivingMeter b = registry.derivingMeter(MetricId.build("X").tagged("what", "balls", "status", "tripping"));
         assert (a == b);
     }
+
+    @Test
+    public void createHistogramTest() {
+        assertNotNull(registry.histogram(MetricId.build("X").tagged("what", "balls")));
+    }
+
+    @Test
+    public void histogramBumpTest() {
+        registry.histogram(MetricId.build("X").tagged("what", "balls", "status", "tripping")).update(5);
+        verify(remote).post("/", "what:balls",
+                ImmutableMap.of(
+                        "type", "metric",
+                        "value", "5",
+                        "key", "X",
+                        "attributes", ImmutableMap.of(
+                                "metric_type", "histogram",
+                                "status", "tripping",
+                                "what", "balls")));
+    }
+
+    @Test
+    public void histogramShardTest() {
+        registry.histogram(
+                MetricId.build("X").tagged("what", "balls", "status", "tripping"),
+                ImmutableList.of("what", "status")).update(3);
+        verify(remote).post(anyString(), eq("what:balls,status:tripping"), anyMap());
+    }
+
+    @Test
+    public void histogramUniquenessTest() {
+        RemoteHistogram a = registry.histogram(MetricId.build("X").tagged("what", "balls", "status", "tripping"));
+        RemoteHistogram b = registry.histogram(MetricId.build("X").tagged("what", "balls", "status", "tripping"));
+        assert (a == b);
+    }
+
 }

@@ -22,11 +22,13 @@
 package com.spotify.metrics.core;
 
 /**
- * Like a coda hale Counter, but remoter.
+ * Like a coda hale Timer, but remoter.
  */
-public interface RemoteCounter extends RemoteMetric {
-    void inc();
-    void inc(long n);
-    void dec();
-    void dec(long n);
+public interface RemoteTimer extends RemoteMetric {
+
+    Context time();
+
+    interface Context {
+        void stop();
+    }
 }

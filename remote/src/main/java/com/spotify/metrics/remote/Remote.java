@@ -26,7 +26,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.util.Map;
 
 /**
- * Interface for a remote server that we can send requests to
+ * Interface for a remote semantic aggregator instance that we can send requests to
  */
 public interface Remote {
     ListenableFuture<Integer> post(String path, String shardKey, Map json);

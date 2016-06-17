@@ -57,7 +57,7 @@ public class OkRemote implements Remote {
 
     @Override
     public ListenableFuture<Integer> post(String path, String shardKey, Map jsonObj) {
-        if (path.indexOf(0) != '/') {
+        if ((path.length() > 0) && (path.charAt(0) != '/')) {
             path = "/" + path;
         }
         final String jsonStr;
@@ -68,6 +68,7 @@ public class OkRemote implements Remote {
         }
         final String url = "http://" + host + ":" + port + path;
         final RequestBody body = RequestBody.create(JSON, jsonStr);
+
         final Request request = new Request.Builder()
             .url(url)
             .addHeader(Sharder.SHARD_KEY, shardKey)

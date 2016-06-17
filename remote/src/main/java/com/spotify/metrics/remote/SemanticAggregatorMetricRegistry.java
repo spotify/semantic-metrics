@@ -23,7 +23,7 @@ package com.spotify.metrics.remote;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.spotify.metrics.core.RemoteCounter;
+import com.spotify.metrics.core.RemoteTimer;
 import com.spotify.metrics.core.RemoteHistogram;
 import com.spotify.metrics.core.RemoteMeter;
 import com.spotify.metrics.core.RemoteDerivingMeter;
@@ -91,13 +91,13 @@ public class SemanticAggregatorMetricRegistry implements RemoteSemanticMetricReg
     }
 
     @Override
-    public RemoteCounter counter(MetricId name) {
-        return counter(name, ImmutableList.of("what"));
+    public RemoteTimer timer(MetricId name) {
+        return timer(name, ImmutableList.of("what"));
     }
 
     @Override
-    public RemoteCounter counter(MetricId name, List<String> shardKey) {
-        return getOrAdd(name, shardKey, SemanticAggregatorMetricBuilder.REMOTE_COUNTERS);
+    public RemoteTimer timer(MetricId name, List<String> shardKey) {
+        return getOrAdd(name, shardKey, SemanticAggregatorMetricBuilder.REMOTE_TIMERS);
     }
 
     @Override

@@ -21,7 +21,7 @@
 
 package com.spotify.metrics.remote;
 
-import com.spotify.metrics.core.RemoteCounter;
+import com.spotify.metrics.core.RemoteTimer;
 import com.spotify.metrics.core.RemoteHistogram;
 import com.spotify.metrics.core.RemoteMeter;
 import com.spotify.metrics.core.RemoteDerivingMeter;
@@ -76,53 +76,18 @@ public interface SemanticAggregatorMetricBuilder<T extends RemoteMetric> {
             }
         };
 
-    SemanticAggregatorMetricBuilder<RemoteCounter> REMOTE_COUNTERS =
-        new SemanticAggregatorMetricBuilder<RemoteCounter>() {
+    SemanticAggregatorMetricBuilder<RemoteTimer> REMOTE_TIMERS =
+        new SemanticAggregatorMetricBuilder<RemoteTimer>() {
             @Override
-            public RemoteCounter newMetric(
-                final MetricId id,
-                final List<String> shardKey,
-                final Remote remote) {
-
-                final Map<String, String> allAttributes =
-                    SemanticAggregator.buildAttributes(id, "counter");
-                final String shard =
-                    Sharder.buildShardKey(shardKey, allAttributes);
-
-                return new RemoteCounter() {
-
-                    @Override
-                    public void inc() {
-                        inc(1);
-                    }
-
-                    @Override
-                    public void inc(long n) {
-                        remote.post(
-                            "/",
-                            shard,
-                            SemanticAggregator.buildDocument(
-                                Long.toString(n),
-                                id.getKey(),
-                                allAttributes));
-                    }
-
-                    @Override
-                    public void dec() {
-                        inc(-1);
-                    }
-
-                    @Override
-                    public void dec(long n) {
-                        inc(-n);
-                    }
-
-                };
+            public RemoteTimer newMetric(final MetricId id,
+                                         final List<String> shardKey,
+                                         final Remote remote) {
+                return new SemanticAggregatorTimer(id, shardKey, remote);
             }
 
             @Override
             public boolean isInstance(final RemoteMetric metric) {
-                return RemoteCounter.class.isInstance(metric);
+                return RemoteTimer.class.isInstance(metric);
             }
         };
 

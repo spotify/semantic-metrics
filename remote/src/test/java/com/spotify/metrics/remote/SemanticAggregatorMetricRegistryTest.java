@@ -2,10 +2,7 @@ package com.spotify.metrics.remote;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.spotify.metrics.core.MetricId;
-import com.spotify.metrics.core.RemoteDerivingMeter;
-import com.spotify.metrics.core.RemoteHistogram;
-import com.spotify.metrics.core.RemoteMeter;
+import com.spotify.metrics.core.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +17,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 /**
- * This test tests the SemanticAggregatorMetricRegistry and RemoteSementicMetricBuilder
+ * This test tests the SemanticAggregatorMetricRegistry and RemoteSemanticMetricBuilder
  * classes.
  */
 @RunWith(MockitoJUnitRunner.class)
@@ -85,42 +82,41 @@ public class SemanticAggregatorMetricRegistryTest {
     }
 
     @Test
-    public void createCounterTest() {
-        assertNotNull(registry.counter(MetricId.build("X").tagged("what", "balls")));
+    public void createTimerTest() {
+        assertNotNull(registry.timer(MetricId.build("X").tagged("what", "balls")));
+        assertNotNull(registry.timer(MetricId.build("X").tagged("what", "balls")).time());
     }
 
     @Test
-    public void counterBump1Test() {
-        registry.counter(MetricId.build("X").tagged("what", "balls", "status", "tripping")).inc();
+    public void timerBumpTest() {
+
+        RemoteTimer tm = new SemanticAggregatorTimer(
+            MetricId.build("X").tagged("what", "balls", "status", "tripping"),
+            ImmutableList.of("what"),
+            remote,
+            new SemanticAggregatorTimer.TimeSource() {
+                long tm;
+                @Override
+                public long nanoTime() {
+                    return tm+= 69;
+                }
+            });
+        tm.time().stop();
         verify(remote).post("/", "what:balls",
                 ImmutableMap.of(
                         "type", "metric",
-                        "value", "1",
+                        "value", "69",
                         "key", "X",
                         "attributes", ImmutableMap.of(
-                                "metric_type", "counter",
+                                "metric_type", "timer",
                                 "status", "tripping",
                                 "what", "balls")));
     }
 
     @Test
-    public void counterBump5Test() {
-        registry.counter(MetricId.build("X").tagged("what", "balls", "status", "tripping")).dec(5);
-        verify(remote).post("/", "what:balls",
-                ImmutableMap.of(
-                        "type", "metric",
-                        "value", "-5",
-                        "key", "X",
-                        "attributes", ImmutableMap.of(
-                                "metric_type", "counter",
-                                "status", "tripping",
-                                "what", "balls")));
-    }
-
-    @Test
-    public void counterUniquenessTest() {
-        RemoteMeter a = registry.meter(MetricId.build("X").tagged("what", "balls", "status", "tripping"));
-        RemoteMeter b = registry.meter(MetricId.build("X").tagged("what", "balls", "status", "tripping"));
+    public void timerUniquenessTest() {
+        RemoteMetric a = registry.timer(MetricId.build("X").tagged("what", "balls", "status", "tripping"));
+        RemoteMetric b = registry.timer(MetricId.build("X").tagged("what", "balls", "status", "tripping"));
         assert (a == b);
     }
 

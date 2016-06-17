@@ -41,9 +41,11 @@ import java.util.Map;
  * Simple Remote implementation using OkHTTP
  */
 public class OkRemote implements Remote {
+    private static final String CONTENT_TYPE_KEY = "Content-Type";
+    private static final String CONTENT_TYPE_VALUE = "application/json";
     private final OkHttpClient client = new OkHttpClient();
     private static final MediaType JSON
-            = MediaType.parse("application/json; charset=utf-8");
+        = MediaType.parse("application/json; charset=utf-8");
     private final String host;
     private final int port;
     private final ObjectMapper mapper = new ObjectMapper();
@@ -67,10 +69,11 @@ public class OkRemote implements Remote {
         final String url = "http://" + host + ":" + port + path;
         final RequestBody body = RequestBody.create(JSON, jsonStr);
         final Request request = new Request.Builder()
-                .url(url)
-                .addHeader(Sharder.SHARD_KEY, shardKey)
-                .post(body)
-                .build();
+            .url(url)
+            .addHeader(Sharder.SHARD_KEY, shardKey)
+            .addHeader(CONTENT_TYPE_KEY, CONTENT_TYPE_VALUE)
+            .post(body)
+            .build();
         final SettableFuture<Integer> result = SettableFuture.create();
         client.newCall(request).enqueue(new Callback() {
             @Override

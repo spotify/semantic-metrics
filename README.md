@@ -325,9 +325,9 @@ This system of classification from the host machine greatly simplifies any
 metrics pipeline.
 When transported with a stable serialization method (like JSON) it does not
 matter if we add additional tags, or decide to change the order in which the
-timeserie happens to be designated.
+timeseries happens to be designated.
 
-We can also easily index this timeseries by it's tag using a system like
+We can also easily index this timeseries by its tag using a system like
 ElasticSearch and ask it interesting questions about which timeseries are
 available.
 

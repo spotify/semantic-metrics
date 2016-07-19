@@ -243,6 +243,11 @@ registry.register(metric.tagged("what", "job-queue-length"), new Gauge<Integer>(
     }
 });
 ```
+In addition to the tags that are specified (e.g., "what" in this example), FfwdReporter adds the following tags to each Gauge data point:
+
+| tag         | values  | comment |
+|-------------|---------|---------|
+| metric_type | gauge   |         |
 
 ## Counter
 A counter is just a gauge for an AtomicLong instance.
@@ -259,6 +264,12 @@ counter.inc();
 counter.dec();
 ```
 
+In addition to the tags that are specified (e.g., "what" in this example), FfwdReporter adds the following tags to each Counter data point:
+
+| tag         | values  | comment |
+|-------------|---------|---------|
+| metric_type | counter |         |
+
 ## Meter
 A meter measures the rate of events over time (e.g., "requests per second").
 In addition to the mean rate, meters also track 1-, 5-, and 15-minute moving
@@ -272,6 +283,14 @@ Meter meter = registry.meter(metric.tagged("what", "incoming-requests").tagged("
 // Now a request comes and it's time to mark the meter
 meter.mark();
 ```
+
+In addition to the tags that are specified (e.g., "what" and "endpoint" in this example), FfwdReporter adds the following tags to each Meter data point:
+
+| tag         | values   | comment |
+|-------------|----------|---------|
+| metric_type | meter    |         |
+| unit        | \<unit\>/s |\<unit\> is what is originally specified as "unit" attribute during declaration. If missing, the value will be set as "n/s". For example if you originally specify .tagged("unit", "request") on a Meter, FfwdReporter emits Meter data points with "unit":"request/s"       |
+| stat | 1m, 5m    | **1m** means the size of the time bucket of the calculated moving average of this data point is 1 minute. **5m** means 5 minutes.         |
 
 ## Histogram
 A histogram measures the statistical distribution of values in a stream of
@@ -287,6 +306,14 @@ Histogram histogram = registry.histogram(metric.tagged("what", "response-size").
 final long responseSize = getResponseSize(response);
 histogram.update(responseSize);
 ```
+In addition to the tags that are specified (e.g., "what" and "endpoint" in this example), FfwdReporter adds the following tags to each Histogram data point:
+
+| tag         | values                         | comment                       |
+|-------------|--------------------------------|-------------------------------|
+| metric_type | histogram                      |                               |
+| stat        | min, max, mean, median, stddev, p75, p99 |**min:** the lowest value in the snapshot<br>**max:** the highest value in the snapshot<br>**mean:** the arithmetic mean of the values in the snapshot<br>**median:** the median value in the distribution<br>**stddev:** the standard deviation of the values in the snapshot<br>**p75:** the value at the 75th percentile in the distribution<br>**p99:** the value at the 99th percentile in the distribution |
+
+Note that added custom percentiles will show up in the stat tag.
 
 ## Timer
 A timer measures both the rate that a particular piece of code is called and
@@ -303,6 +330,14 @@ doStuff();
 // Tell the context that it's done. This will register the duration and counts one occurrence.
 context.stop();
 ```
+
+In addition to the tags that are specified (e.g., "what" and "endpoint" in this example), FfwdReporter adds the following tags to each Timer data point:
+
+| tag         | values                         | comment                       |
+|-------------|--------------------------------|-------------------------------|
+| metric_type | timer                          |                               |
+| unit        | ns                             |                               |
+**NOTE:** Timer is really just a combination of a Histogram and a Meter, so apart from the tags above, combination of both Histogram and Meter tags will be included.
 
 # Why Semantic Metrics?
 

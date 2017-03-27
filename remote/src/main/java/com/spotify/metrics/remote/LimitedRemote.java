@@ -53,4 +53,9 @@ public class LimitedRemote implements Remote {
             }
         });
     }
+
+    @Override
+    public void waitForAllCalls() {
+        inner.waitForAllCalls();
+    }
 }

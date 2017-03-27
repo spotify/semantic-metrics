@@ -26,6 +26,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+
+import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import okhttp3.MediaType;
 import okhttp3.Request;
@@ -88,5 +90,18 @@ public class OkRemote implements Remote {
             }
         });
         return result;
+    }
+
+    @Override
+    public void waitForAllCalls() {
+        Dispatcher dispatcher = client.dispatcher();
+        while (dispatcher.queuedCallsCount() != 0 || dispatcher.runningCallsCount() != 0) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
     }
 }

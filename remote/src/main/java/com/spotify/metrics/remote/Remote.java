@@ -30,4 +30,5 @@ import java.util.Map;
  */
 public interface Remote {
     ListenableFuture<Integer> post(String path, String shardKey, Map json);
+    void waitForAllCalls();
 }

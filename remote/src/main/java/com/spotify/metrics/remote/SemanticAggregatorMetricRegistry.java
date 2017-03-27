@@ -130,4 +130,8 @@ public class SemanticAggregatorMetricRegistry implements RemoteSemanticMetricReg
         return getOrAdd(name, shardKey, SemanticAggregatorMetricBuilder.REMOTE_METERS);
     }
 
+    @Override
+    public void waitForAllCalls() {
+        remote.waitForAllCalls();
+    }
 }

@@ -104,4 +104,9 @@ public interface RemoteSemanticMetricRegistry {
      * @return a new {@link RemoteMeter}
      */
     RemoteMeter meter(final MetricId name);
+
+    /**
+     * Wait for all metrics to be sent to the remote.
+     */
+    void waitForAllCalls();
 }

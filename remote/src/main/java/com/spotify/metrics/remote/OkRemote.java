@@ -93,6 +93,7 @@ public class OkRemote implements Remote {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 result.set(response.code());
+                response.close();
             }
         });
         return result;

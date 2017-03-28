@@ -27,6 +27,9 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import okhttp3.MediaType;
@@ -44,6 +47,8 @@ import java.util.concurrent.TimeUnit;
  * Simple Remote implementation using OkHTTP
  */
 public class OkRemote implements Remote {
+    private static final Logger log = LoggerFactory.getLogger(OkRemote.class);
+
     private static final String CONTENT_TYPE_KEY = "Content-Type";
     private static final String CONTENT_TYPE_VALUE = "application/json";
     private final OkHttpClient client = new OkHttpClient();
@@ -62,7 +67,8 @@ public class OkRemote implements Remote {
     @Override
     public synchronized ListenableFuture<Integer> post(String path, String shardKey, Map jsonObj) {
         if (closed) {
-            throw new RuntimeException("Calling post after shutdown");
+            log.warn("Calling post after shutdown. Call will be ignored.");
+            return Futures.immediateCancelledFuture();
         }
 
         if ((path.length() > 0) && (path.charAt(0) != '/')) {

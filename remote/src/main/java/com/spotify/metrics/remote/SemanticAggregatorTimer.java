@@ -21,6 +21,8 @@
 
 package com.spotify.metrics.remote;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.RemoteTimer;
 
@@ -65,9 +67,9 @@ public class SemanticAggregatorTimer implements RemoteTimer {
         final long startTm = timeSource.nanoTime();
         return new RemoteTimer.Context() {
             @Override
-            public void stop() {
+            public ListenableFuture<Integer> stop() {
                 long stopTm = timeSource.nanoTime();
-                remote.post(
+                return remote.post(
                     "/",
                     shard,
                     SemanticAggregator.buildDocument(

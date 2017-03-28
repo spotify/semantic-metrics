@@ -21,6 +21,8 @@
 
 package com.spotify.metrics.remote;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import com.spotify.metrics.core.RemoteTimer;
 import com.spotify.metrics.core.RemoteHistogram;
 import com.spotify.metrics.core.RemoteMeter;
@@ -52,13 +54,13 @@ public interface SemanticAggregatorMetricBuilder<T extends RemoteMetric> {
 
                 return new RemoteMeter() {
                     @Override
-                    public void mark() {
-                        mark(1);
+                    public ListenableFuture<Integer> mark() {
+                        return mark(1);
                     }
 
                     @Override
-                    public void mark(long n) {
-                        remote.post(
+                    public ListenableFuture<Integer> mark(long n) {
+                        return remote.post(
                             "/",
                             shard,
                             SemanticAggregator.buildDocument(
@@ -106,13 +108,13 @@ public interface SemanticAggregatorMetricBuilder<T extends RemoteMetric> {
 
                 return new RemoteDerivingMeter() {
                     @Override
-                    public void mark() {
-                        mark(1);
+                    public ListenableFuture<Integer> mark() {
+                        return mark(1);
                     }
 
                     @Override
-                    public void mark(long n) {
-                        remote.post(
+                    public ListenableFuture<Integer> mark(long n) {
+                        return remote.post(
                             "/",
                             shard,
                             SemanticAggregator.buildDocument(
@@ -145,8 +147,8 @@ public interface SemanticAggregatorMetricBuilder<T extends RemoteMetric> {
 
                 return new RemoteHistogram() {
                     @Override
-                    public void update(long value) {
-                        remote.post(
+                    public ListenableFuture<Integer> update(long value) {
+                        return remote.post(
                             "/",
                             shard,
                             SemanticAggregator.buildDocument(

@@ -21,10 +21,12 @@
 
 package com.spotify.metrics.core;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 /**
  * Like a coda hale Meter, but remoter.
  */
 public interface RemoteMeter extends RemoteMetric {
-    void mark();
-    void mark(long n);
+    ListenableFuture<Integer> mark();
+    ListenableFuture<Integer> mark(long n);
 }

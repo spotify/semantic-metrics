@@ -21,9 +21,11 @@
 
 package com.spotify.metrics.core;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 /**
  * Like a coda hale Histogram, but remoter.
  */
 public interface RemoteHistogram extends RemoteMetric {
-    void update(long value);
+    ListenableFuture<Integer> update(long value);
 }

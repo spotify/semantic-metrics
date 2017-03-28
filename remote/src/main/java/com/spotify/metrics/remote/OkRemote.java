@@ -100,9 +100,10 @@ public class OkRemote implements Remote {
     }
 
     @Override
-    public synchronized boolean shutdown(long timeout, TimeUnit timeUnit)
-            throws InterruptedException {
-        closed = true;
+    public boolean shutdown(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        synchronized (this) {
+            closed = true;
+        }
         Dispatcher dispatcher = client.dispatcher();
         long millis = timeUnit.toMillis(timeout);
         long expirationTime = System.currentTimeMillis() + millis;

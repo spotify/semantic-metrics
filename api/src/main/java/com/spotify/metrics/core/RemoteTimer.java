@@ -21,6 +21,8 @@
 
 package com.spotify.metrics.core;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 /**
  * Like a coda hale Timer, but remoter.
  */
@@ -29,6 +31,6 @@ public interface RemoteTimer extends RemoteMetric {
     Context time();
 
     interface Context {
-        void stop();
+        ListenableFuture<Integer> stop();
     }
 }

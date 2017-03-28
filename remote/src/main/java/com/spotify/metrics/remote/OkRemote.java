@@ -26,6 +26,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import okhttp3.MediaType;
 import okhttp3.Request;
@@ -36,11 +41,14 @@ import okhttp3.Response;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Simple Remote implementation using OkHTTP
  */
 public class OkRemote implements Remote {
+    private static final Logger log = LoggerFactory.getLogger(OkRemote.class);
+
     private static final String CONTENT_TYPE_KEY = "Content-Type";
     private static final String CONTENT_TYPE_VALUE = "application/json";
     private final OkHttpClient client = new OkHttpClient();
@@ -49,6 +57,7 @@ public class OkRemote implements Remote {
     private final String host;
     private final int port;
     private final ObjectMapper mapper = new ObjectMapper();
+    private boolean closed = false;
 
     public OkRemote(String host, int port) {
         this.host = host;
@@ -56,7 +65,12 @@ public class OkRemote implements Remote {
     }
 
     @Override
-    public ListenableFuture<Integer> post(String path, String shardKey, Map jsonObj) {
+    public synchronized ListenableFuture<Integer> post(String path, String shardKey, Map jsonObj) {
+        if (closed) {
+            log.warn("Calling post after shutdown. Call will be ignored.");
+            return Futures.immediateCancelledFuture();
+        }
+
         if ((path.length() > 0) && (path.charAt(0) != '/')) {
             path = "/" + path;
         }
@@ -85,8 +99,26 @@ public class OkRemote implements Remote {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 result.set(response.code());
+                response.close();
             }
         });
         return result;
+    }
+
+    @Override
+    public boolean shutdown(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        synchronized (this) {
+            closed = true;
+        }
+        Dispatcher dispatcher = client.dispatcher();
+        long millis = timeUnit.toMillis(timeout);
+        long expirationTime = System.currentTimeMillis() + millis;
+        while (dispatcher.queuedCallsCount() != 0 || dispatcher.runningCallsCount() != 0) {
+            if (System.currentTimeMillis() > expirationTime) {
+                return false;
+            }
+            Thread.sleep(100);
+        }
+        return true;
     }
 }

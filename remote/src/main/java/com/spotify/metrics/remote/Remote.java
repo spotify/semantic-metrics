@@ -24,10 +24,12 @@ package com.spotify.metrics.remote;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Interface for a remote semantic aggregator instance that we can send requests to
  */
 public interface Remote {
     ListenableFuture<Integer> post(String path, String shardKey, Map json);
+    boolean shutdown(long timeout, TimeUnit timeUnit) throws InterruptedException;
 }

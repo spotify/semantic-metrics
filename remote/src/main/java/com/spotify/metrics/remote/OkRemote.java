@@ -38,6 +38,7 @@ import okhttp3.Response;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Simple Remote implementation using OkHTTP
@@ -51,6 +52,7 @@ public class OkRemote implements Remote {
     private final String host;
     private final int port;
     private final ObjectMapper mapper = new ObjectMapper();
+    private boolean closed = false;
 
     public OkRemote(String host, int port) {
         this.host = host;
@@ -58,7 +60,11 @@ public class OkRemote implements Remote {
     }
 
     @Override
-    public ListenableFuture<Integer> post(String path, String shardKey, Map jsonObj) {
+    public synchronized ListenableFuture<Integer> post(String path, String shardKey, Map jsonObj) {
+        if (closed) {
+            throw new RuntimeException("Calling post after shutdown");
+        }
+
         if ((path.length() > 0) && (path.charAt(0) != '/')) {
             path = "/" + path;
         }
@@ -93,15 +99,18 @@ public class OkRemote implements Remote {
     }
 
     @Override
-    public void waitForAllCalls() {
+    public synchronized boolean shutdown(long timeout, TimeUnit timeUnit)
+            throws InterruptedException {
+        closed = true;
         Dispatcher dispatcher = client.dispatcher();
+        long nanos = timeUnit.toNanos(timeout);
+        long expirationTime = System.currentTimeMillis() + nanos;
         while (dispatcher.queuedCallsCount() != 0 || dispatcher.runningCallsCount() != 0) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
+            if (System.currentTimeMillis() > expirationTime) {
+                return false;
             }
+            Thread.sleep(100);
         }
+        return true;
     }
 }

@@ -22,6 +22,7 @@
 package com.spotify.metrics.core;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Interface for arbitrary implementation of a MetricRegistry that
@@ -106,7 +107,13 @@ public interface RemoteSemanticMetricRegistry {
     RemoteMeter meter(final MetricId name);
 
     /**
-     * Wait for all metrics to be sent to the remote.
+     * Stop accepting new metrics to be sent and wait for all asynchronous calls
+     * to be done or the timeout to occur.
+     *
+     * @param timeout For how long to wait for asynchronous requests
+     * @param timeUnit The unit of the timeout
+     * @return False if the timeout occurred before all requests were completed
+     * @throws InterruptedException if the wait was interrupted
      */
-    void waitForAllCalls();
+    boolean shutdown(long timeout, TimeUnit timeUnit) throws InterruptedException;
 }

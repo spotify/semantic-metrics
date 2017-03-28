@@ -26,6 +26,7 @@ import com.spotify.futures.ConcurrencyLimiter;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A remote that wraps another remote and limits both the number of
@@ -55,7 +56,7 @@ public class LimitedRemote implements Remote {
     }
 
     @Override
-    public void waitForAllCalls() {
-        inner.waitForAllCalls();
+    public boolean shutdown(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        return inner.shutdown(timeout, timeUnit);
     }
 }

@@ -34,6 +34,7 @@ import com.spotify.metrics.core.RemoteSemanticMetricRegistry;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A registry of remote metric instances. Works just like
@@ -131,7 +132,7 @@ public class SemanticAggregatorMetricRegistry implements RemoteSemanticMetricReg
     }
 
     @Override
-    public void waitForAllCalls() {
-        remote.waitForAllCalls();
+    public boolean shutdown(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        return remote.shutdown(timeout, timeUnit);
     }
 }

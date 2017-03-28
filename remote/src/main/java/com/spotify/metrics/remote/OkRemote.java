@@ -104,8 +104,8 @@ public class OkRemote implements Remote {
             throws InterruptedException {
         closed = true;
         Dispatcher dispatcher = client.dispatcher();
-        long nanos = timeUnit.toNanos(timeout);
-        long expirationTime = System.currentTimeMillis() + nanos;
+        long millis = timeUnit.toMillis(timeout);
+        long expirationTime = System.currentTimeMillis() + millis;
         while (dispatcher.queuedCallsCount() != 0 || dispatcher.runningCallsCount() != 0) {
             if (System.currentTimeMillis() > expirationTime) {
                 return false;

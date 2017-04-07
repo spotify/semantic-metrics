@@ -34,6 +34,25 @@ import java.util.concurrent.TimeUnit;
  */
 public interface RemoteSemanticMetricRegistry {
     /**
+     * Creates a new {@link RemoteCounter} and registers it under the given name.
+     * Sharding uses the "what"-tag of the metric Id.
+     *
+     * @param name the name of the metric
+     * @return a new {@link RemoteCounter}
+     */
+    RemoteCounter counter(final MetricId name);
+
+    /**
+     * Creates a new {@link RemoteCounter} and registers it under the given name.
+     * Sharding uses the "what"-tag of the metric Id.
+     *
+     * @param name the name of the metric
+     * @param shardKey the list of tags to be used for sharding
+     * @return a new {@link RemoteCounter}
+     */
+    RemoteCounter counter(final MetricId name, final List<String> shardKey);
+
+    /**
      * Creates a new {@link RemoteTimer} and registers it under the given name.
      * Sharding uses the "what"-tag of the metric Id.
      *

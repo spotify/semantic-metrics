@@ -48,6 +48,7 @@ public class JvmExample {
         registry.register(MetricId.build("jvm-threads"), new ThreadStatesMetricSet());
         registry.register(MetricId.build("jvm-cpu"), CpuGaugeSet.create());
         registry.register(MetricId.build("jvm-fd-ratio"), new FileDescriptorGaugeSet());
+
         final FastForwardReporter reporter = FastForwardReporter
             .forRegistry(registry)
             .prefix(APP_PREFIX)

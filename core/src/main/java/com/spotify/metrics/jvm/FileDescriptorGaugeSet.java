@@ -26,6 +26,7 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.jvm.FileDescriptorRatioGauge;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricSet;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,24 +36,25 @@ import java.util.Map;
  */
 public class FileDescriptorGaugeSet implements SemanticMetricSet {
 
-  private FileDescriptorRatioGauge fileDescriptorRatioGauge;
+    private FileDescriptorRatioGauge fileDescriptorRatioGauge;
 
-  public FileDescriptorGaugeSet() {
-    fileDescriptorRatioGauge = new FileDescriptorRatioGauge();
-  }
+    public FileDescriptorGaugeSet() {
+        fileDescriptorRatioGauge = new FileDescriptorRatioGauge();
+    }
 
-  @Override
-  public Map<MetricId, Metric> getMetrics() {
-    fileDescriptorRatioGauge.getValue();
-    final Map<MetricId, Metric> gauges = new HashMap<MetricId, Metric>();
-    final MetricId metricId = MetricId.build().tagged("what", "file-descriptor-ratio", "unit", "ratio");
+    @Override
+    public Map<MetricId, Metric> getMetrics() {
+        fileDescriptorRatioGauge.getValue();
+        final Map<MetricId, Metric> gauges = new HashMap<MetricId, Metric>();
+        final MetricId metricId =
+                MetricId.build().tagged("what", "file-descriptor-ratio", "unit", "ratio");
 
-    gauges.put(metricId, new Gauge<Object>() {
-      @Override
-      public Object getValue() {
-        return fileDescriptorRatioGauge.getValue();
-      }
-    });
-    return Collections.unmodifiableMap(gauges);
-  }
+        gauges.put(metricId, new Gauge<Object>() {
+            @Override
+            public Object getValue() {
+                return fileDescriptorRatioGauge.getValue();
+            }
+        });
+        return Collections.unmodifiableMap(gauges);
+    }
 }

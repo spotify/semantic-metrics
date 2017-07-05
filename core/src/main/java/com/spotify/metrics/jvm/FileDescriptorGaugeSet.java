@@ -44,10 +44,9 @@ public class FileDescriptorGaugeSet implements SemanticMetricSet {
 
     @Override
     public Map<MetricId, Metric> getMetrics() {
-        fileDescriptorRatioGauge.getValue();
         final Map<MetricId, Metric> gauges = new HashMap<MetricId, Metric>();
         final MetricId metricId =
-                MetricId.build().tagged("what", "file-descriptor-ratio", "unit", "ratio");
+                MetricId.build().tagged("what", "file-descriptor-ratio", "unit", "%");
 
         gauges.put(metricId, new Gauge<Object>() {
             @Override

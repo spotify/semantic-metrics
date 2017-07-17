@@ -25,6 +25,7 @@ import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricRegistry;
 import com.spotify.metrics.ffwd.FastForwardReporter;
 import com.spotify.metrics.jvm.CpuGaugeSet;
+import com.spotify.metrics.jvm.FileDescriptorGaugeSet;
 import com.spotify.metrics.jvm.GarbageCollectorMetricSet;
 import com.spotify.metrics.jvm.MemoryUsageGaugeSet;
 import com.spotify.metrics.jvm.ThreadStatesMetricSet;
@@ -35,8 +36,7 @@ import java.util.concurrent.TimeUnit;
  * An example application that collects JVM statistics and reports them into FastForward.
  * <p>
  * To run this example and see the output please setup a local ffwd and run ffwd debugger. Follow
- * this link to see the instruction: https://github
- * .com/spotify/ffwd/blob/master/docs/basic-local-ffwd.md
+ * this link to see the https://github.com/spotify/ffwd#local-debugging
  */
 public class JvmExample {
     private static final MetricId APP_PREFIX = MetricId.build("jvm-example");
@@ -47,6 +47,7 @@ public class JvmExample {
         registry.register(MetricId.build("jvm-gc"), new GarbageCollectorMetricSet());
         registry.register(MetricId.build("jvm-threads"), new ThreadStatesMetricSet());
         registry.register(MetricId.build("jvm-cpu"), CpuGaugeSet.create());
+        registry.register(MetricId.build("jvm-fd-ratio"), new FileDescriptorGaugeSet());
 
         final FastForwardReporter reporter = FastForwardReporter
             .forRegistry(registry)

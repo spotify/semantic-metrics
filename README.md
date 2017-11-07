@@ -160,7 +160,7 @@ uses to report metrics (e.g. `my-service-statistics`), and use these to
 build an implementation using semantic metrics
 (`my-service-semantic-statistics`).
 
-This pattern greatly simplifes integrating your application with more than one
+This pattern greatly simplifies integrating your application with more than one
 metric collector, or ditching semantic-metrics when it becomes superseded by
 something better.
 
@@ -230,7 +230,7 @@ There are different metric types that can be used depending on what it is that
 we want to measure, e.g., queue length, or request time, etc.
 
 ## Gauge
-A gauge is an instantaneous measurement of a value. For example of we want to measure the number of pending jobs in a queue.
+A gauge is an instantaneous measurement of a value. For example if we want to measure the number of pending jobs in a queue.
 
 ```java
 registry.register(metric.tagged("what", "job-queue-length"), new Gauge<Integer>() {

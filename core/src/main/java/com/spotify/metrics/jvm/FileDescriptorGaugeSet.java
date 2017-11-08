@@ -55,7 +55,7 @@ public class FileDescriptorGaugeSet implements SemanticMetricSet {
                     // which does not exist in Java 8, therefore return 0.
                     try {
                         return fileDescriptorRatioGauge.getValue();
-                    } catch(Exception e) {
+                    } catch (Exception e) {
                         return 0;
                     }
             }

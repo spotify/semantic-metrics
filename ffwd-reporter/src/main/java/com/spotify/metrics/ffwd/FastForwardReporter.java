@@ -22,6 +22,7 @@
 package com.spotify.metrics.ffwd;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Counting;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -239,7 +240,7 @@ public class FastForwardReporter implements AutoCloseable {
         return 0;
     }
 
-    private void reportCounter(MetricId key, Counter value) {
+    private void reportCounter(MetricId key, Counting value) {
         key = MetricId.join(prefix, key);
 
         final Metric m = FastForward
@@ -270,6 +271,7 @@ public class FastForwardReporter implements AutoCloseable {
             .attribute(METRIC_TYPE, "meter");
 
         reportMetered(m, value);
+        reportCounter(key, value);
     }
 
     private void reportTimer(MetricId key, Timer value) {

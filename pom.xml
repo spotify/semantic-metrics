@@ -4,7 +4,7 @@
 
   <groupId>com.spotify.metrics</groupId>
   <artifactId>semantic-metrics-parent</artifactId>
-  <version>0.9.1-SNAPSHOT</version>
+  <version>0.10.0</version>
   <name>Semantic Metrics: Parent POM</name>
   <packaging>pom</packaging>
 
@@ -27,7 +27,7 @@
     <developerConnection>scm:git:git@github.com:spotify/semantic-metrics.git
     </developerConnection>
     <url>https://github.com/spotify/semantic-metrics</url>
-    <tag>HEAD</tag>
+    <tag>0.10.0</tag>
   </scm>
 
   <licenses>

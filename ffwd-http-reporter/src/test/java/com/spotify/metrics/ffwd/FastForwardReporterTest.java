@@ -38,10 +38,7 @@ public class FastForwardReporterTest {
     private Clock.Fixed fixedClock;
     @Mock
     private HttpClient httpClient;
-    @Mock
-    private Observable<Void> observable;
-    @Mock
-    private Completable completable;
+
     private Map<String, String> commonTags;
 
     @Before

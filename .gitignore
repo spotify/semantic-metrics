@@ -1,4 +1,7 @@
 target
-.*
-pom.xml.versionsBackup
+.cache
+*.versionsBackup
+*.properties
 *.iml
+/.idea/*
+!/.idea/codeStyleSettings.xml

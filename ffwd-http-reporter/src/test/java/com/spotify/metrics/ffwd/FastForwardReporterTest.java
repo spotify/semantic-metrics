@@ -25,7 +25,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import rx.Completable;
 import rx.Observable;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -64,7 +63,8 @@ public class FastForwardReporterTest {
         registry.counter(MetricId.build("counter"));
         registry.derivingMeter(MetricId.build("deriving-meter"));
         registry.histogram(MetricId.build("histogram"));
-        registry.meter(MetricId.build("meter"));
+        registry.meter(MetricId.build("meter").tagged("unit", "spec"));
+        registry.meter(MetricId.build("meter2"));
         registry.timer(MetricId.build("timer"));
         registry.register(MetricId.build("gauge").tagged("what", "some-gauge"),
             new Gauge<Double>() {
@@ -89,9 +89,12 @@ public class FastForwardReporterTest {
         expected.add(
             new Batch.Point("prefix.histogram", of("unit", "n", "stat", "stddev"), 0, TIME));
         expected.add(new Batch.Point("prefix.histogram", of("unit", "n", "stat", "p99"), 0, TIME));
-        expected.add(new Batch.Point("prefix.meter", of("unit", "n", "stat", "count"), 0, TIME));
-        expected.add(new Batch.Point("prefix.meter", of("unit", "n/s", "stat", "1m"), 0, TIME));
-        expected.add(new Batch.Point("prefix.meter", of("unit", "n/s", "stat", "5m"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter", of("unit", "spec", "stat", "count"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter", of("unit", "spec/s", "stat", "1m"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter", of("unit", "spec/s", "stat", "5m"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter2", of("unit", "n", "stat", "count"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter2", of("unit", "n/s", "stat", "1m"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter2", of("unit", "n/s", "stat", "5m"), 0, TIME));
         expected.add(new Batch.Point("prefix.timer", of("unit", "ns", "stat", "max"), 0, TIME));
         expected.add(new Batch.Point("prefix.timer", of("unit", "ns", "stat", "min"), 0, TIME));
         expected.add(new Batch.Point("prefix.timer", of("unit", "ns", "stat", "mean"), 0, TIME));

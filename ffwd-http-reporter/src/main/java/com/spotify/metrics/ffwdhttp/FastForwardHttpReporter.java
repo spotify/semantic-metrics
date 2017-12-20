@@ -29,7 +29,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metered;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.spotify.ffwd.http.Batch;
 import com.spotify.ffwd.http.HttpClient;
@@ -39,6 +38,7 @@ import com.spotify.metrics.core.SemanticMetricFilter;
 import com.spotify.metrics.core.SemanticMetricRegistry;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -401,14 +401,23 @@ public class FastForwardHttpReporter implements AutoCloseable {
         private Map<String, String> statsMap(
             final String stat
         ) {
-            final ImmutableMap.Builder<String, String> builder =
-                ImmutableMap.<String, String>builder().putAll(tags).put("unit", this.unit);
+            final boolean sameUnit = this.unit.equals(tags.get("unit"));
+
+            if (sameUnit && stat == null) {
+                return tags;
+            }
+
+            final Map<String, String> builder = new HashMap<>(tags);
+
+            if (!sameUnit) {
+                builder.put("unit", this.unit);
+            }
 
             if (stat != null) {
                 builder.put("stat", stat);
             }
 
-            return builder.build();
+            return builder;
         }
     }
 }

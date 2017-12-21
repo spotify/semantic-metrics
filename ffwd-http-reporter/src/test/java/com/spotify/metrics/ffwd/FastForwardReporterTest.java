@@ -75,37 +75,62 @@ public class FastForwardReporterTest {
             });
 
         final Set<Batch.Point> expected = new HashSet<>();
-        expected.add(new Batch.Point("prefix.counter", of("unit", "n", "stat", "count"), 0, TIME));
+        expected.add(new Batch.Point("prefix.counter",
+            of("unit", "n", "stat", "count", "metric_type", "counter"), 0, TIME));
+        expected.add(new Batch.Point("prefix.deriving-meter",
+            of("unit", "n/s", "stat", "5m", "metric_type", "deriving-meter"), 0, TIME));
+        expected.add(new Batch.Point("prefix.deriving-meter",
+            of("unit", "n/s", "stat", "1m", "metric_type", "deriving-meter"), 0, TIME));
+        expected.add(new Batch.Point("prefix.histogram",
+            of("unit", "n", "stat", "max", "metric_type", "histogram"), 0, TIME));
+        expected.add(new Batch.Point("prefix.histogram",
+            of("unit", "n", "stat", "min", "metric_type", "histogram"), 0, TIME));
+        expected.add(new Batch.Point("prefix.histogram",
+            of("unit", "n", "stat", "mean", "metric_type", "histogram"), 0, TIME));
+        expected.add(new Batch.Point("prefix.histogram",
+            of("unit", "n", "stat", "p75", "metric_type", "histogram"), 0, TIME));
+        expected.add(new Batch.Point("prefix.histogram",
+            of("unit", "n", "stat", "median", "metric_type", "histogram"), 0, TIME));
+        expected.add(new Batch.Point("prefix.histogram",
+            of("unit", "n", "stat", "stddev", "metric_type", "histogram"), 0, TIME));
+        expected.add(new Batch.Point("prefix.histogram",
+            of("unit", "n", "stat", "p99", "metric_type", "histogram"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter",
+            of("unit", "spec", "stat", "count", "metric_type", "meter"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter",
+            of("unit", "spec/s", "stat", "1m", "metric_type", "meter"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter",
+            of("unit", "spec/s", "stat", "5m", "metric_type", "meter"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter2",
+            of("unit", "n", "stat", "count", "metric_type", "meter"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter2",
+            of("unit", "n/s", "stat", "1m", "metric_type", "meter"), 0, TIME));
+        expected.add(new Batch.Point("prefix.meter2",
+            of("unit", "n/s", "stat", "5m", "metric_type", "meter"), 0, TIME));
         expected.add(
-            new Batch.Point("prefix.deriving-meter", of("unit", "n/s", "stat", "5m"), 0, TIME));
+            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "max", "metric_type", "timer"),
+                0, TIME));
         expected.add(
-            new Batch.Point("prefix.deriving-meter", of("unit", "n/s", "stat", "1m"), 0, TIME));
-        expected.add(new Batch.Point("prefix.histogram", of("unit", "n", "stat", "max"), 0, TIME));
-        expected.add(new Batch.Point("prefix.histogram", of("unit", "n", "stat", "min"), 0, TIME));
-        expected.add(new Batch.Point("prefix.histogram", of("unit", "n", "stat", "mean"), 0, TIME));
-        expected.add(new Batch.Point("prefix.histogram", of("unit", "n", "stat", "p75"), 0, TIME));
+            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "min", "metric_type", "timer"),
+                0, TIME));
+        expected.add(new Batch.Point("prefix.timer",
+            of("unit", "ns", "stat", "mean", "metric_type", "timer"), 0, TIME));
         expected.add(
-            new Batch.Point("prefix.histogram", of("unit", "n", "stat", "median"), 0, TIME));
+            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "p75", "metric_type", "timer"),
+                0, TIME));
+        expected.add(new Batch.Point("prefix.timer",
+            of("unit", "ns", "stat", "median", "metric_type", "timer"), 0, TIME));
+        expected.add(new Batch.Point("prefix.timer",
+            of("unit", "ns", "stat", "stddev", "metric_type", "timer"), 0, TIME));
         expected.add(
-            new Batch.Point("prefix.histogram", of("unit", "n", "stat", "stddev"), 0, TIME));
-        expected.add(new Batch.Point("prefix.histogram", of("unit", "n", "stat", "p99"), 0, TIME));
-        expected.add(new Batch.Point("prefix.meter", of("unit", "spec", "stat", "count"), 0, TIME));
-        expected.add(new Batch.Point("prefix.meter", of("unit", "spec/s", "stat", "1m"), 0, TIME));
-        expected.add(new Batch.Point("prefix.meter", of("unit", "spec/s", "stat", "5m"), 0, TIME));
-        expected.add(new Batch.Point("prefix.meter2", of("unit", "n", "stat", "count"), 0, TIME));
-        expected.add(new Batch.Point("prefix.meter2", of("unit", "n/s", "stat", "1m"), 0, TIME));
-        expected.add(new Batch.Point("prefix.meter2", of("unit", "n/s", "stat", "5m"), 0, TIME));
-        expected.add(new Batch.Point("prefix.timer", of("unit", "ns", "stat", "max"), 0, TIME));
-        expected.add(new Batch.Point("prefix.timer", of("unit", "ns", "stat", "min"), 0, TIME));
-        expected.add(new Batch.Point("prefix.timer", of("unit", "ns", "stat", "mean"), 0, TIME));
-        expected.add(new Batch.Point("prefix.timer", of("unit", "ns", "stat", "p75"), 0, TIME));
-        expected.add(new Batch.Point("prefix.timer", of("unit", "ns", "stat", "median"), 0, TIME));
-        expected.add(new Batch.Point("prefix.timer", of("unit", "ns", "stat", "stddev"), 0, TIME));
-        expected.add(new Batch.Point("prefix.timer", of("unit", "ns", "stat", "p99"), 0, TIME));
-        expected.add(new Batch.Point("prefix.timer", of("unit", "ns/s", "stat", "1m"), 0, TIME));
-        expected.add(new Batch.Point("prefix.timer", of("unit", "ns/s", "stat", "5m"), 0, TIME));
-        expected.add(
-            new Batch.Point("prefix.gauge", of("what", "some-gauge", "unit", "n"), 0, TIME));
+            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "p99", "metric_type", "timer"),
+                0, TIME));
+        expected.add(new Batch.Point("prefix.timer",
+            of("unit", "ns/s", "stat", "1m", "metric_type", "timer"), 0, TIME));
+        expected.add(new Batch.Point("prefix.timer",
+            of("unit", "ns/s", "stat", "5m", "metric_type", "timer"), 0, TIME));
+        expected.add(new Batch.Point("prefix.gauge",
+            of("what", "some-gauge", "unit", "n", "metric_type", "gauge"), 0, TIME));
 
         reporter.start();
 

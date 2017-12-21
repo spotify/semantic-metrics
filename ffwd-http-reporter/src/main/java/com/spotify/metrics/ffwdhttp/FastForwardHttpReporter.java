@@ -53,6 +53,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FastForwardHttpReporter implements AutoCloseable {
+    private static final String METRIC_TYPE = "metric_type";
     private static final Logger log = LoggerFactory.getLogger(FastForwardHttpReporter.class);
 
     private static final SemanticMetricFilter FILTER_ALL = SemanticMetricFilter.ALL;
@@ -195,34 +196,37 @@ public class FastForwardHttpReporter implements AutoCloseable {
         for (@SuppressWarnings("rawtypes") Map.Entry<MetricId, Gauge> entry : registry
             .getGauges(FILTER_ALL)
             .entrySet()) {
-            final BatchBuilder builder = createBuilder(points, timestamp, entry.getKey());
+            final BatchBuilder builder = createBuilder(points, timestamp, entry.getKey(), "gauge");
             reportGauge(builder, entry.getValue());
         }
 
         for (Map.Entry<MetricId, Counter> entry : registry.getCounters(FILTER_ALL).entrySet()) {
-            final BatchBuilder builder = createBuilder(points, timestamp, entry.getKey());
+            final BatchBuilder builder =
+                createBuilder(points, timestamp, entry.getKey(), "counter");
             reportCounter(builder, entry.getValue());
         }
 
         for (Map.Entry<MetricId, Histogram> entry : registry.getHistograms(FILTER_ALL).entrySet()) {
-            final BatchBuilder builder = createBuilder(points, timestamp, entry.getKey());
+            final BatchBuilder builder =
+                createBuilder(points, timestamp, entry.getKey(), "histogram");
             reportHistogram(builder, entry.getValue().getSnapshot());
         }
 
         for (Map.Entry<MetricId, Meter> entry : registry.getMeters(FILTER_ALL).entrySet()) {
-            final BatchBuilder builder = createBuilder(points, timestamp, entry.getKey());
+            final BatchBuilder builder = createBuilder(points, timestamp, entry.getKey(), "meter");
             reportMeter(builder, entry.getValue());
         }
 
         for (Map.Entry<MetricId, Timer> entry : registry.getTimers(FILTER_ALL).entrySet()) {
-            final BatchBuilder builder = createBuilder(points, timestamp, entry.getKey());
+            final BatchBuilder builder = createBuilder(points, timestamp, entry.getKey(), "timer");
             reportTimer(builder, entry.getValue());
         }
 
         for (Map.Entry<MetricId, DerivingMeter> entry : registry
             .getDerivingMeters(FILTER_ALL)
             .entrySet()) {
-            final BatchBuilder builder = createBuilder(points, timestamp, entry.getKey());
+            final BatchBuilder builder =
+                createBuilder(points, timestamp, entry.getKey(), "deriving-meter");
             reportDerivingMeter(builder, entry.getValue());
         }
 
@@ -233,11 +237,12 @@ public class FastForwardHttpReporter implements AutoCloseable {
     }
 
     private BatchBuilder createBuilder(
-        final List<Batch.Point> points, final long timestamp, final MetricId id
+        final List<Batch.Point> points, final long timestamp, final MetricId id,
+        final String metricType
     ) {
         final String key = joinKeys(prefix, id);
         final String unit = getUnit(id.getTags());
-        return new BatchBuilder(points, timestamp, key, id.getTags(), unit);
+        return new BatchBuilder(points, timestamp, key, id.getTags(), unit, metricType);
     }
 
     private void reportGauge(
@@ -374,24 +379,30 @@ public class FastForwardHttpReporter implements AutoCloseable {
         private final String key;
         private final Map<String, String> tags;
         private final String unit;
+        private final String metricType;
 
         public BatchBuilder(
             final List<Batch.Point> points, final long timestamp, final String key,
-            final Map<String, String> tags, final String unit
+            final Map<String, String> tags, final String unit, final String metricType
         ) {
             this.points = points;
             this.timestamp = timestamp;
             this.key = key;
             this.tags = tags;
             this.unit = unit;
+            this.metricType = metricType;
         }
 
         public String getUnit() {
             return unit;
         }
 
-        public BatchBuilder withUnit(final String newUnit) {
-            return new BatchBuilder(points, timestamp, key, tags, newUnit);
+        public BatchBuilder withUnit(final String unit) {
+            return new BatchBuilder(points, timestamp, key, tags, unit, metricType);
+        }
+
+        public BatchBuilder withMetricType(final String metricType) {
+            return new BatchBuilder(points, timestamp, key, tags, unit, metricType);
         }
 
         public void buildPoint(final String stat, final double value) {
@@ -402,8 +413,9 @@ public class FastForwardHttpReporter implements AutoCloseable {
             final String stat
         ) {
             final boolean sameUnit = this.unit.equals(tags.get("unit"));
+            final boolean sameMetricType = this.metricType.equals(tags.get("unit"));
 
-            if (sameUnit && stat == null) {
+            if (sameMetricType && sameUnit && stat == null) {
                 return tags;
             }
 
@@ -415,6 +427,10 @@ public class FastForwardHttpReporter implements AutoCloseable {
 
             if (stat != null) {
                 builder.put("stat", stat);
+            }
+
+            if (!sameMetricType) {
+                builder.put("metric_type", metricType);
             }
 
             return builder;

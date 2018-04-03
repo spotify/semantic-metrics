@@ -8,6 +8,9 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 import com.codahale.metrics.Gauge;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.spotify.ffwd.http.Batch;
 import com.spotify.ffwd.http.HttpClient;
@@ -15,6 +18,7 @@ import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricRegistry;
 import com.spotify.metrics.ffwdhttp.Clock;
 import com.spotify.metrics.ffwdhttp.FastForwardHttpReporter;
+import com.spotify.metrics.tags.EnvironmentTagExtractor;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -145,5 +149,34 @@ public class FastForwardReporterTest {
             points.removeAll(expected);
             assertEquals("expected empty set of points", ImmutableSet.of(), points);
         }
+    }
+
+    @Test
+    public void shouldAddExtractedTags() throws Exception {
+        final Map<String, String> tags = ImmutableMap.of("FFWD_TAG_bar", "baz");
+
+        final Supplier<Map<String, String>> environmentSupplier =
+            Suppliers.ofInstance(tags);
+
+        reporter = FastForwardHttpReporter
+            .forRegistry(registry, httpClient)
+            .schedule(REPORTING_PERIOD, TimeUnit.MILLISECONDS)
+            .prefix(MetricId.build("prefix").tagged(commonTags))
+            .clock(fixedClock)
+            .tagExtractor(new EnvironmentTagExtractor(environmentSupplier))
+            .build();
+
+        doReturn(Observable.<Void>just(null)).when(httpClient).sendBatch(any(Batch.class));
+        fixedClock.setCurrentTime(TIME);
+
+        reporter.start();
+
+        final ArgumentCaptor<Batch> batch = ArgumentCaptor.forClass(Batch.class);
+
+        verify(httpClient, timeout(REPORTING_PERIOD * 2 + 20).atLeast(2)).sendBatch(
+            batch.capture());
+
+        final Map<String, String> commonTags = batch.getValue().getCommonTags();
+        assertEquals(ImmutableMap.of("foo", "bar", "bar", "baz"), commonTags);
     }
 }

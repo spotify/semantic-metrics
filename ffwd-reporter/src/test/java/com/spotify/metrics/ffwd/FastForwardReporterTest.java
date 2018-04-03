@@ -1,11 +1,15 @@
 package com.spotify.metrics.ffwd;
 
 import com.google.common.base.Function;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.spotify.metrics.core.DerivingMeter;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricRegistry;
+import com.spotify.metrics.tags.EnvironmentTagExtractor;
 import eu.toolchain.ffwd.FastForward;
 import eu.toolchain.ffwd.Metric;
 import org.junit.Before;
@@ -20,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -41,7 +46,6 @@ public class FastForwardReporterTest {
     public void setUp() throws Exception {
         registry = new SemanticMetricRegistry();
         fastForward = mock(FastForward.class);
-
         reporter = FastForwardReporter
             .forRegistry(registry)
             .schedule(TimeUnit.MILLISECONDS, REPORTING_PERIOD)
@@ -125,5 +129,37 @@ public class FastForwardReporterTest {
         for (String stat : foundStats.keySet()) {
             assertThat("found " + stat, foundStats.get(stat), is(true));
         }
+    }
+
+    @Test
+    public void shouldAddExtractedTags() throws Exception {
+        final Map<String, String> tags = ImmutableMap.of("FFWD_TAG_foo", "bar");
+
+        final Supplier<Map<String, String>> environmentSupplier =
+            Suppliers.ofInstance(tags);
+
+        reporter = FastForwardReporter
+            .forRegistry(registry)
+            .schedule(TimeUnit.MILLISECONDS, REPORTING_PERIOD)
+            .fastForward(fastForward)
+            .tagExtractor(new EnvironmentTagExtractor(environmentSupplier))
+            .build();
+
+        ArgumentCaptor<Metric> argument = ArgumentCaptor.forClass(Metric.class);
+
+        MetricId name = MetricId.build("thename");
+
+        final com.codahale.metrics.Counter counter = registry.counter(name);
+        counter.inc(1);
+        reporter.start();
+
+        verify(fastForward, timeout(REPORTING_PERIOD + REPORTING_PERIOD / 3)
+            .atLeastOnce())
+            .send(argument.capture());
+
+        final ImmutableMap<String, String> expected =
+            ImmutableMap.of("metric_type", "counter", "foo", "bar");
+
+        assertEquals(expected, argument.getValue().getAttributes());
     }
 }

@@ -8,7 +8,7 @@
   <parent>
     <groupId>com.spotify.metrics</groupId>
     <artifactId>semantic-metrics-parent</artifactId>
-    <version>0.11.3</version>
+    <version>0.11.4-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 

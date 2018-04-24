@@ -34,6 +34,8 @@ import com.spotify.metrics.core.DerivingMeter;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricFilter;
 import com.spotify.metrics.core.SemanticMetricRegistry;
+import com.spotify.metrics.tags.NoopTagExtractor;
+import com.spotify.metrics.tags.TagExtractor;
 import eu.toolchain.ffwd.FastForward;
 import eu.toolchain.ffwd.Metric;
 import org.slf4j.Logger;
@@ -80,6 +82,7 @@ public class FastForwardReporter implements AutoCloseable {
     private final TimeUnit unit;
     private final long duration;
     private final FastForward client;
+    private final TagExtractor tagExtractor;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
@@ -96,12 +99,21 @@ public class FastForwardReporter implements AutoCloseable {
         SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
         FastForward client, Set<Percentile> histogramPercentiles
     ) {
+        this(registry, prefix, unit, duration, client, new HashSet<>(histogramPercentiles),
+            new NoopTagExtractor());
+    }
+
+    private FastForwardReporter(
+        SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
+        FastForward client, Set<Percentile> histogramPercentiles, TagExtractor tagExtractor
+    ) {
         this.registry = registry;
         this.prefix = prefix;
         this.unit = unit;
         this.duration = duration;
         this.client = client;
         this.histogramPercentiles = new HashSet<>(histogramPercentiles);
+        this.tagExtractor = tagExtractor;
     }
 
     public static Builder forRegistry(SemanticMetricRegistry registry) {
@@ -116,6 +128,7 @@ public class FastForwardReporter implements AutoCloseable {
         private int port = FastForward.DEFAULT_PORT;
         private MetricId prefix = MetricId.build();
         private FastForward client = null;
+        private TagExtractor tagExtractor;
 
         private Set<Percentile> histogramPercentiles =
             Sets.newHashSet(new Percentile(0.75), new Percentile(0.99));
@@ -155,6 +168,11 @@ public class FastForwardReporter implements AutoCloseable {
             return this;
         }
 
+        public Builder tagExtractor(TagExtractor tagExtractor) {
+            this.tagExtractor = tagExtractor;
+            return this;
+        }
+
         /**
          * Set which quantiles should be reported as percentiles by this reporter. Calling this
          * method overrides the default percentiles (p75, p99).
@@ -173,8 +191,10 @@ public class FastForwardReporter implements AutoCloseable {
         public FastForwardReporter build() throws IOException {
             final FastForward client =
                 this.client != null ? this.client : FastForward.setup(host, port);
+            final TagExtractor tagExtractor =
+                this.tagExtractor != null ? this.tagExtractor : new NoopTagExtractor();
             return new FastForwardReporter(registry, prefix, unit, time, client,
-                histogramPercentiles);
+                histogramPercentiles, tagExtractor);
         }
     }
 
@@ -331,8 +351,11 @@ public class FastForwardReporter implements AutoCloseable {
     }
 
     private void send(Metric metric) {
+        final Map<String, String> tags = tagExtractor.addTags(metric.getAttributes());
+        final Metric taggedMetric = metric.attributes(tags);
+
         try {
-            client.send(metric);
+            client.send(taggedMetric);
         } catch (IOException e) {
             log.error("Failed to send metric", e);
         }

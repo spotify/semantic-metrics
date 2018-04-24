@@ -36,6 +36,8 @@ import com.spotify.metrics.core.DerivingMeter;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricFilter;
 import com.spotify.metrics.core.SemanticMetricRegistry;
+import com.spotify.metrics.tags.NoopTagExtractor;
+import com.spotify.metrics.tags.TagExtractor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -82,12 +84,22 @@ public class FastForwardHttpReporter implements AutoCloseable {
     private final HttpClient client;
     private final Set<Percentile> histogramPercentiles;
     private final Clock clock;
+    private final TagExtractor tagExtractor;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private FastForwardHttpReporter(
         SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
         HttpClient client, Set<Percentile> histogramPercentiles, Clock clock
+    ) {
+        this(registry, prefix, unit, duration, client, histogramPercentiles, clock,
+            new NoopTagExtractor());
+    }
+
+    private FastForwardHttpReporter(
+        SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
+        HttpClient client, Set<Percentile> histogramPercentiles, Clock clock,
+        TagExtractor tagExtractor
     ) {
         this.registry = registry;
         this.prefix = prefix;
@@ -96,6 +108,7 @@ public class FastForwardHttpReporter implements AutoCloseable {
         this.client = client;
         this.histogramPercentiles = new HashSet<>(histogramPercentiles);
         this.clock = clock;
+        this.tagExtractor = tagExtractor;
     }
 
     public static Builder forRegistry(SemanticMetricRegistry registry, HttpClient client) {
@@ -109,6 +122,7 @@ public class FastForwardHttpReporter implements AutoCloseable {
         private TimeUnit unit = TimeUnit.MINUTES;
         private MetricId prefix = MetricId.build();
         private Clock clock;
+        private TagExtractor tagExtractor;
 
         private Set<Percentile> histogramPercentiles =
             Sets.newHashSet(new Percentile(0.75), new Percentile(0.99));
@@ -177,6 +191,16 @@ public class FastForwardHttpReporter implements AutoCloseable {
             return this;
         }
 
+        /**
+         * TagExtractor implementation that will be used in the reporter.
+         *
+         * @return this builder
+         */
+        public Builder tagExtractor(TagExtractor tagExtractor) {
+            this.tagExtractor = tagExtractor;
+            return this;
+        }
+
         public FastForwardHttpReporter build() throws IOException {
             Clock clock = this.clock;
 
@@ -184,8 +208,11 @@ public class FastForwardHttpReporter implements AutoCloseable {
                 clock = new Clock.SystemTime();
             }
 
+            final TagExtractor tagExtractor =
+                this.tagExtractor != null ? this.tagExtractor : new NoopTagExtractor();
+
             return new FastForwardHttpReporter(registry, prefix, unit, time, client,
-                histogramPercentiles, clock);
+                histogramPercentiles, clock, tagExtractor);
         }
     }
 
@@ -230,7 +257,7 @@ public class FastForwardHttpReporter implements AutoCloseable {
             reportDerivingMeter(builder, entry.getValue());
         }
 
-        final Map<String, String> commonTags = prefix.getTags();
+        final Map<String, String> commonTags = tagExtractor.addTags(prefix.getTags());
         final Batch batch = new Batch(commonTags, points);
 
         client.sendBatch(batch).toCompletable().await();

@@ -41,7 +41,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +55,9 @@ public class InstrumentedExecutorServiceTest {
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private final SemanticMetricRegistry registry = new SemanticMetricRegistry();
+
+    @Rule
+    public final TestRule globalTimeout = Timeout.seconds(2);
 
     @After
     public void tearDown() throws InterruptedException {
@@ -87,9 +93,10 @@ public class InstrumentedExecutorServiceTest {
         ExecutorService executorService,
         MetricId baseMetricId) throws ExecutionException, InterruptedException {
 
-        final Meter submitted = registry.meter(baseMetricId.tagged("what", "submitted"));
-        final Counter running = registry.counter(baseMetricId.tagged("what", "running"));
-        final Meter completed = registry.meter(baseMetricId.tagged("what", "completed"));
+        MetricId baseMetricIdWithUnit = baseMetricId.tagged("unit", "task");
+        final Meter submitted = registry.meter(baseMetricIdWithUnit.tagged("what", "submitted"));
+        final Counter running = registry.counter(baseMetricIdWithUnit.tagged("what", "running"));
+        final Meter completed = registry.meter(baseMetricIdWithUnit.tagged("what", "completed"));
         final Timer duration = registry.timer(baseMetricId.tagged("what", "duration"));
         final Timer idle = registry.timer(baseMetricId.tagged("what", "idle"));
 

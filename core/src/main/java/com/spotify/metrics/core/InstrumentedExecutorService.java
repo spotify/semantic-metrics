@@ -74,10 +74,11 @@ public class InstrumentedExecutorService implements ExecutorService {
         ExecutorService delegate,
         SemanticMetricRegistry registry,
         MetricId baseMetricId) {
+        MetricId baseMetricIdWithUnit = baseMetricId.tagged("unit", "task");
         this.delegate = delegate;
-        this.submitted = registry.meter(baseMetricId.tagged("what", "submitted"));
-        this.running = registry.counter(baseMetricId.tagged("what", "running"));
-        this.completed = registry.meter(baseMetricId.tagged("what", "completed"));
+        this.submitted = registry.meter(baseMetricIdWithUnit.tagged("what", "submitted"));
+        this.running = registry.counter(baseMetricIdWithUnit.tagged("what", "running"));
+        this.completed = registry.meter(baseMetricIdWithUnit.tagged("what", "completed"));
         this.idle = registry.timer(baseMetricId.tagged("what", "idle"));
         this.duration = registry.timer(baseMetricId.tagged("what", "duration"));
     }

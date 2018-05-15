@@ -51,7 +51,13 @@ public class FileDescriptorGaugeSet implements SemanticMetricSet {
         gauges.put(metricId, new Gauge<Object>() {
             @Override
             public Object getValue() {
-                return fileDescriptorRatioGauge.getValue();
+                    // Java 9 will throw java.lang.reflect.InaccessibleObjectException
+                    // which does not exist in Java 8, therefore return 0.
+                    try {
+                        return fileDescriptorRatioGauge.getValue();
+                    } catch (final Exception e) {
+                        return 0;
+                    }
             }
         });
         return Collections.unmodifiableMap(gauges);

@@ -3,7 +3,8 @@ language: java
 jdk:
   - openjdk7
   - oraclejdk8
-
+  - openjdk10
+  
 cache:
   directories:
     - $HOME/.m2

@@ -26,7 +26,8 @@ import org.slf4j.LoggerFactory;
 
 @RunWith(Parameterized.class)
 public class InstrumentedScheduledExecutorServiceTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(InstrumentedScheduledExecutorServiceTest.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(InstrumentedScheduledExecutorServiceTest.class);
 
     private Meter submitted;
     private Counter running;
@@ -38,7 +39,7 @@ public class InstrumentedScheduledExecutorServiceTest {
     private Histogram percentOfPeriod;
     private InstrumentedScheduledExecutorService instrumentedScheduledExecutor;
 
-    @Parameterized.Parameters(name="using default base metric id: {0}")
+    @Parameterized.Parameters(name = "using default base metric id: {0}")
     public static Object[] parameters() {
         return new Object[]{
             true, false
@@ -59,7 +60,8 @@ public class InstrumentedScheduledExecutorServiceTest {
         if (useDefaultBaseMetricId) {
             instrumentedScheduledExecutor = new InstrumentedScheduledExecutorService(
                 Executors.newSingleThreadScheduledExecutor(), registry);
-            baseMetricId = new MetricId().tagged("executor", "scheduled-executor-" + EXECUTOR_NAME_PREFIX.incrementAndGet());
+            baseMetricId = new MetricId().tagged("executor",
+                "scheduled-executor-" + EXECUTOR_NAME_PREFIX.incrementAndGet());
         } else {
             baseMetricId = new MetricId().tagged("executor", "xs");
             instrumentedScheduledExecutor = new InstrumentedScheduledExecutorService(
@@ -71,9 +73,12 @@ public class InstrumentedScheduledExecutorServiceTest {
         completed = registry.meter(baseMetricIdWithUnit.tagged("what", "completed"));
         duration = registry.timer(baseMetricIdWithUnit.tagged("what", "duration"));
         scheduledOnce = registry.meter(baseMetricIdWithUnit.tagged("what", "scheduled.once"));
-        scheduledRepetitively = registry.meter(baseMetricIdWithUnit.tagged("what", "scheduled.repetitively"));
-        scheduledOverrun = registry.counter(baseMetricIdWithUnit.tagged("what", "scheduled.overrun"));
-        percentOfPeriod = registry.histogram(baseMetricIdWithUnit.tagged("what", "scheduled.percent-of-period"));
+        scheduledRepetitively =
+            registry.meter(baseMetricIdWithUnit.tagged("what", "scheduled.repetitively"));
+        scheduledOverrun =
+            registry.counter(baseMetricIdWithUnit.tagged("what", "scheduled.overrun"));
+        percentOfPeriod =
+            registry.histogram(baseMetricIdWithUnit.tagged("what", "scheduled.percent-of-period"));
     }
 
     @After

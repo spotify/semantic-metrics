@@ -34,7 +34,7 @@ import rx.Observable;
 @RunWith(MockitoJUnitRunner.class)
 public class FastForwardHttpReporterTest {
     private static final int REPORTING_PERIOD = 50;
-    public static final long TIME = 42L;
+    private static final long TIME = 42L;
     private FastForwardHttpReporter reporter;
 
     private SemanticMetricRegistry registry;
@@ -60,7 +60,7 @@ public class FastForwardHttpReporterTest {
     }
 
     @Test
-    public void someReporting() throws Exception {
+    public void someReporting() {
         doReturn(Observable.<Void>just(null)).when(httpClient).sendBatch(any(Batch.class));
         fixedClock.setCurrentTime(TIME);
 
@@ -140,7 +140,7 @@ public class FastForwardHttpReporterTest {
 
         final ArgumentCaptor<Batch> batch = ArgumentCaptor.forClass(Batch.class);
 
-        verify(httpClient, timeout(REPORTING_PERIOD * 2 + 20).atLeast(2)).sendBatch(
+        verify(httpClient, timeout(REPORTING_PERIOD * 2 + 20).atLeastOnce()).sendBatch(
             batch.capture());
 
         for (final Batch b : batch.getAllValues()) {
@@ -173,7 +173,7 @@ public class FastForwardHttpReporterTest {
 
         final ArgumentCaptor<Batch> batch = ArgumentCaptor.forClass(Batch.class);
 
-        verify(httpClient, timeout(REPORTING_PERIOD * 2 + 20).atLeast(2)).sendBatch(
+        verify(httpClient, timeout(REPORTING_PERIOD * 2 + 20).atLeastOnce()).sendBatch(
             batch.capture());
 
         final Map<String, String> commonTags = batch.getValue().getCommonTags();

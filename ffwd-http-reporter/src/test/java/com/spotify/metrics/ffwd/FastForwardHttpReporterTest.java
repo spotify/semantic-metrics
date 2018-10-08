@@ -32,7 +32,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import rx.Observable;
 
 @RunWith(MockitoJUnitRunner.class)
-public class FastForwardReporterTest {
+public class FastForwardHttpReporterTest {
     private static final int REPORTING_PERIOD = 50;
     public static final long TIME = 42L;
     private FastForwardHttpReporter reporter;

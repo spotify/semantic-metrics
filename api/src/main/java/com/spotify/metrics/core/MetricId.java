@@ -35,7 +35,7 @@ import java.util.TreeMap;
  * Instances of this class are immutable. There are methods that copy-then-modify MetricId's, these
  * should be used sparingly and not in performance critical sections since they are slow.
  * <p>
- * If you find the need to mutate a MetricId frequently, consider using {@link MetricIdMutator<T>}
+ * If you find the need to mutate a MetricId frequently, consider using MetricIdMutator<T>
  * which will cache values for you.
  * <p>
  * This replaces the previous style where metric names where strictly dot-separated strings.

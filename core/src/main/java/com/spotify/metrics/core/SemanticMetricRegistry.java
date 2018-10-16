@@ -31,12 +31,13 @@
 package com.spotify.metrics.core;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
+import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.Timer;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 /**
  * A registry of metric instances.
@@ -54,13 +56,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SemanticMetricRegistry implements SemanticMetricSet {
     private final ConcurrentMap<MetricId, Metric> metrics;
     private final List<SemanticMetricRegistryListener> listeners;
+    private final Supplier<Reservoir> defaultReservoirSupplier;
 
     /**
      * Creates a new {@link SemanticMetricRegistry}.
      */
     public SemanticMetricRegistry(final ConcurrentMap<MetricId, Metric> metrics) {
-        this.metrics = metrics;
-        this.listeners = new CopyOnWriteArrayList<SemanticMetricRegistryListener>();
+        this(metrics, () -> new ExponentiallyDecayingReservoir());
     }
 
     /**
@@ -69,8 +71,16 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     public SemanticMetricRegistry() {
         // This is only for backward compatibility purpose. After removing the "buildMap" method
         // we should call this(new ConcurrentHashMap<MetricId, Metric>()) instead.
-        this.metrics = buildMap();
+        this(new ConcurrentHashMap<MetricId, Metric>(), () -> new ExponentiallyDecayingReservoir());
+    }
+
+    public SemanticMetricRegistry(
+        final ConcurrentMap<MetricId, Metric> metrics,
+        final Supplier<Reservoir> defaultReservoirSupplier
+    ) {
+        this.metrics = metrics;
         this.listeners = new CopyOnWriteArrayList<SemanticMetricRegistryListener>();
+        this.defaultReservoirSupplier = defaultReservoirSupplier;
     }
 
     /**
@@ -138,11 +148,28 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      * @return a new {@link Histogram}
      */
     public Histogram histogram(final MetricId name) {
-        return getOrAdd(name, SemanticMetricBuilder.HISTOGRAMS);
+        return getOrAdd(name,
+            SemanticMetricBuilderFactory.histogramWithReservoir(defaultReservoirSupplier));
+    }
+
+
+
+
+    /**
+     * Creates a new {@link Histogram} with a custom {@link Reservoir} and registers it under
+     * the given name.
+     *
+     * @param name the name of the metric
+     * @param reservoirSupplier a {@link Supplier} that returns an instance of {@link Reservoir}
+     * @return a new {@link Histogram}
+     */
+    public Histogram histogram(final MetricId name, Supplier<Reservoir> reservoirSupplier) {
+        return getOrAdd(name,
+            SemanticMetricBuilderFactory.histogramWithReservoir(reservoirSupplier));
     }
 
     /**
-     * Creates a new {@link Meter} and registers it under the given name.
+     * Creates a new {@link Meter}  and registers it under the given name.
      *
      * @param name the name of the metric
      * @return a new {@link Meter}
@@ -158,7 +185,21 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      * @return a new {@link Timer}
      */
     public Timer timer(final MetricId name) {
-        return getOrAdd(name, SemanticMetricBuilder.TIMERS);
+        return getOrAdd(name,
+            SemanticMetricBuilderFactory.timerWithReservoir(defaultReservoirSupplier));
+    }
+
+
+    /**
+     * Creates a new {@link Timer} with a custom {@link Reservoir} and registers it under the given
+     * name.
+     *
+     * @param name the name of the metric
+     * @param reservoirSupplier a {@link Supplier} that returns an instance of {@link Reservoir}
+     * @return a new {@link Timer}
+     */
+    public Timer timer(final MetricId name, Supplier<Reservoir> reservoirSupplier) {
+        return getOrAdd(name, SemanticMetricBuilderFactory.timerWithReservoir(reservoirSupplier));
     }
 
     public DerivingMeter derivingMeter(final MetricId name) {

@@ -44,17 +44,8 @@ public interface SemanticMetricBuilder<T extends Metric> {
         }
     };
 
-    SemanticMetricBuilder<Histogram> HISTOGRAMS = new SemanticMetricBuilder<Histogram>() {
-        @Override
-        public Histogram newMetric() {
-            return new Histogram(new ExponentiallyDecayingReservoir());
-        }
-
-        @Override
-        public boolean isInstance(final Metric metric) {
-            return Histogram.class.isInstance(metric);
-        }
-    };
+    SemanticMetricBuilder<Histogram> HISTOGRAMS = SemanticMetricBuilderFactory
+        .histogramWithReservoir(() -> new ExponentiallyDecayingReservoir());
 
     SemanticMetricBuilder<Meter> METERS = new SemanticMetricBuilder<Meter>() {
         @Override
@@ -68,17 +59,8 @@ public interface SemanticMetricBuilder<T extends Metric> {
         }
     };
 
-    SemanticMetricBuilder<Timer> TIMERS = new SemanticMetricBuilder<Timer>() {
-        @Override
-        public Timer newMetric() {
-            return new Timer();
-        }
-
-        @Override
-        public boolean isInstance(final Metric metric) {
-            return Timer.class.isInstance(metric);
-        }
-    };
+    SemanticMetricBuilder<Timer> TIMERS = SemanticMetricBuilderFactory
+        .timerWithReservoir(() -> new ExponentiallyDecayingReservoir());
 
     SemanticMetricBuilder<DerivingMeter> DERIVING_METERS =
         new SemanticMetricBuilder<DerivingMeter>() {

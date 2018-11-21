@@ -22,8 +22,8 @@
 package com.spotify.metrics.remote;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.spotify.futures.ConcurrencyLimiter;
-
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -33,13 +33,13 @@ import java.util.concurrent.TimeUnit;
  * requests in flight as well as the number of requests in queue.
  */
 public class LimitedRemote implements Remote {
-
     private final Remote inner;
     private final ConcurrencyLimiter<Integer> tasks;
 
     public LimitedRemote(Remote inner, int maxConcurrency, int highWaterMark) {
         this.inner = inner;
-        tasks = ConcurrencyLimiter.create(maxConcurrency, highWaterMark);
+        tasks = ConcurrencyLimiter.create(
+            MoreExecutors.directExecutor(), maxConcurrency, highWaterMark);
     }
 
     @Override

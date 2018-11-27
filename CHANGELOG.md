@@ -1,4 +1,4 @@
-# 1.0.0 (not yet released)
+# 1.0.0
 
 - update metrics library from `com.codahale.metrics:metrics-*:3.0.2` to
   `io.dropwizard.metrics:metrics-*:4.0.2` ([30][]), primarily to pull in fixes

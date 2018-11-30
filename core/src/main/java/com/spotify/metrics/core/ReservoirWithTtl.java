@@ -49,7 +49,7 @@ public class ReservoirWithTtl implements Reservoir {
 
     private static final int DEFAULT_MINIMUM_RATE = 10;
 
-    private static Constructor SNAPSHOT_CONSTRUCTOR;
+    private static Constructor snapshotConstructor;
 
     private final int ttlSeconds;
 
@@ -63,20 +63,21 @@ public class ReservoirWithTtl implements Reservoir {
 
     static {
         // There is a breaking API change between metrics-core 3.1 and 3.2 where
-        // com.codahale.metrics.Snapshot becomes abstract and is replaced by UniformSnapshot. There are
-        // more breaking changes between the two versions (bumbing breaks hermes-java for instance).
-        // On the other hand, newer versions of the datastax drivers use the newer version. This means
-        // that to not force anyone to make a lot of changes to be able to use this library, we need to
-        // support both versions. The below code is the most sane way we have found to do that: We find
-        // one class out of the two candidates that is possible to construct and save a reference to
-        // its constructor.
+        // com.codahale.metrics.Snapshot becomes abstract and is replaced by UniformSnapshot.
+        // There are more breaking changes between the two versions (bumbing breaks hermes-java for
+        // instance). On the other hand, newer versions of the datastax drivers use the newer
+        // version. This means that to not force anyone to make a lot of changes to be able to use
+        // this library, we need to support both versions. The below code is the most sane way we
+        // have found to do that: We find one class out of the two candidates that is possible to
+        // construct and save a reference to its constructor.
         try {
-            SNAPSHOT_CONSTRUCTOR = Class.forName("com.codahale.metrics.Snapshot")
-                                        .getConstructor(Collection.class);
+            snapshotConstructor =
+                Class.forName("com.codahale.metrics.Snapshot").getConstructor(Collection.class);
         } catch (final ClassNotFoundException | NoSuchMethodException e) {
             try {
-                SNAPSHOT_CONSTRUCTOR = Class.forName("com.codahale.metrics.UniformSnapshot")
-                                            .getConstructor(Collection.class);
+                snapshotConstructor = Class
+                    .forName("com.codahale.metrics.UniformSnapshot")
+                    .getConstructor(Collection.class);
             } catch (final ClassNotFoundException | NoSuchMethodException e2) {
                 throw new RuntimeException(e2);
             }
@@ -150,7 +151,7 @@ public class ReservoirWithTtl implements Reservoir {
     private Snapshot getInternalSnapshot() {
         try {
             // See comment at static initializer why we need to use constructor reference
-            return (Snapshot) SNAPSHOT_CONSTRUCTOR.newInstance(
+            return (Snapshot) snapshotConstructor.newInstance(
                 valueBuffer.stream().map(v -> v.value).collect(toList()));
         } catch (final Exception e) {
             throw new RuntimeException(e);

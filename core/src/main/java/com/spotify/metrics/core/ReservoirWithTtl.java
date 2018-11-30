@@ -88,6 +88,10 @@ public class ReservoirWithTtl implements Reservoir {
         this(new ExponentiallyDecayingReservoir(), DEFAULT_TTL_SECONDS, DEFAULT_MINIMUM_RATE);
     }
 
+    public ReservoirWithTtl(final int ttlSeconds) {
+        this(new ExponentiallyDecayingReservoir(), ttlSeconds, DEFAULT_MINIMUM_RATE);
+    }
+
     public ReservoirWithTtl(final Reservoir delegate, final int ttlSeconds, final int minimumRate) {
         this(delegate, ttlSeconds, minimumRate, Instant::now);
     }

@@ -315,6 +315,19 @@ In addition to the tags that are specified (e.g., "what" and "endpoint" in this 
 
 Note that added custom percentiles will show up in the stat tag.
 
+### Histogram with ttl
+
+
+`HistogramWithTtl` changes the behavior of the default codahale histogram when update rate is low. If the update rate goes below a certain threshold for a certain time, all samples that have been received during that time are used instead of the random sample that is used in the default histogram implementation. When update rates are above the threshold, the default implementation is used.
+
+**What problem does it solve?**
+
+The default histogram implementation uses a random sampling algorithm with exponentially decaying probabilities over time. This works well if update rates are approximately 10 requests per second or above. When rates go below that, the metrics, especially p99 and above tends to flatline because the values are not replaced often enough. We solve this by using a different implementation whenever the update rate goes below 10 RPS. This gives much more dynamic percentile measurements during low update rates. When update rates go above the threshold we switch to the default implementation.
+
+This was authored by Johan Buratti. 
+
+
+
 ## Timer
 A timer measures both the rate that a particular piece of code is called and
 the distribution of its duration.

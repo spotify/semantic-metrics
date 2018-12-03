@@ -74,6 +74,12 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
         this(new ConcurrentHashMap<MetricId, Metric>(), () -> new ExponentiallyDecayingReservoir());
     }
 
+    public SemanticMetricRegistry(final Supplier<Reservoir> defaultReservoirSupplier) {
+        this.metrics = new ConcurrentHashMap<MetricId, Metric>();
+        this.listeners = new CopyOnWriteArrayList<SemanticMetricRegistryListener>();
+        this.defaultReservoirSupplier = defaultReservoirSupplier;
+    }
+
     public SemanticMetricRegistry(
         final ConcurrentMap<MetricId, Metric> metrics,
         final Supplier<Reservoir> defaultReservoirSupplier

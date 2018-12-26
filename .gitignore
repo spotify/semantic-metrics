@@ -1,7 +1,4 @@
-target
-.cache
+target/
 *.versionsBackup
 *.properties
 *.iml
-/.idea/*
-!/.idea/codeStyleSettings.xml

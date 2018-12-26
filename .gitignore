@@ -1,3 +1,5 @@
+.cache/
+.idea/
 target/
 *.versionsBackup
 *.properties

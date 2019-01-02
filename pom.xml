@@ -46,6 +46,7 @@
     <module>examples</module>
     <module>guava</module>
     <module>remote</module>
+    <module>semantic-metrics-bom</module>
   </modules>
 
   <properties>

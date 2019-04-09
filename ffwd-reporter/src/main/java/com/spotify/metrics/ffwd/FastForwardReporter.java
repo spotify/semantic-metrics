@@ -242,22 +242,17 @@ public class FastForwardReporter implements AutoCloseable {
             return;
         }
 
-        key = MetricId.join(prefix, key);
+        final Object gaugeValue = value.getValue();
+        if (gaugeValue instanceof Number) {
+            double doubleValue = ((Number) gaugeValue).doubleValue();
+            key = MetricId.join(prefix, key);
 
-        final Metric m = FastForward
-            .metric(key.getKey())
-            .attributes(key.getTags())
-            .attribute(METRIC_TYPE, "gauge");
-
-        send(m.value(convert(value.getValue())));
-    }
-
-    private double convert(Object value) {
-        if (value instanceof Number) {
-            return Number.class.cast(value).doubleValue();
+            final Metric m = FastForward
+                    .metric(key.getKey())
+                    .attributes(key.getTags())
+                    .attribute(METRIC_TYPE, "gauge");
+            send(m.value(doubleValue));
         }
-
-        return 0;
     }
 
     private void reportCounter(MetricId key, Counting value) {

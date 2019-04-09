@@ -279,15 +279,11 @@ public class FastForwardHttpReporter implements AutoCloseable {
             return;
         }
 
-        builder.buildPoint(null, convert(value.getValue()));
-    }
-
-    private double convert(Object value) {
-        if (value instanceof Number) {
-            return Number.class.cast(value).doubleValue();
+        final Object gaugeValue = value.getValue();
+        if (gaugeValue instanceof Number) {
+            double doubleValue = ((Number) gaugeValue).doubleValue();
+            builder.buildPoint(null, doubleValue);
         }
-
-        return 0;
     }
 
     private void reportCounter(

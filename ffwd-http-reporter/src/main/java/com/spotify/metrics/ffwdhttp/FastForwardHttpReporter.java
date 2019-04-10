@@ -85,21 +85,23 @@ public class FastForwardHttpReporter implements AutoCloseable {
     private final Set<Percentile> histogramPercentiles;
     private final Clock clock;
     private final TagExtractor tagExtractor;
+    private final boolean alwaysEmitGauges;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private FastForwardHttpReporter(
         SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
-        HttpClient client, Set<Percentile> histogramPercentiles, Clock clock
+        HttpClient client, Set<Percentile> histogramPercentiles, Clock clock,
+        boolean alwaysEmitGauges
     ) {
         this(registry, prefix, unit, duration, client, histogramPercentiles, clock,
-            new NoopTagExtractor());
+            new NoopTagExtractor(), alwaysEmitGauges);
     }
 
     private FastForwardHttpReporter(
         SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
         HttpClient client, Set<Percentile> histogramPercentiles, Clock clock,
-        TagExtractor tagExtractor
+        TagExtractor tagExtractor, boolean alwaysEmitGauges
     ) {
         this.registry = registry;
         this.prefix = prefix;
@@ -109,6 +111,7 @@ public class FastForwardHttpReporter implements AutoCloseable {
         this.histogramPercentiles = new HashSet<>(histogramPercentiles);
         this.clock = clock;
         this.tagExtractor = tagExtractor;
+        this.alwaysEmitGauges = alwaysEmitGauges;
     }
 
     public static Builder forRegistry(SemanticMetricRegistry registry, HttpClient client) {
@@ -123,6 +126,7 @@ public class FastForwardHttpReporter implements AutoCloseable {
         private MetricId prefix = MetricId.build();
         private Clock clock;
         private TagExtractor tagExtractor;
+        private boolean alwaysEmitGauges = true;
 
         private Set<Percentile> histogramPercentiles =
             Sets.newHashSet(new Percentile(0.75), new Percentile(0.99));
@@ -201,6 +205,21 @@ public class FastForwardHttpReporter implements AutoCloseable {
             return this;
         }
 
+        /**
+         * When a gauge returns null, or something that is not a Number, this setting takes effect
+         * If the setting is true, the gauge will emit a metric with value zero.
+         * If the setting is false, the gauge will not emit any metric.
+         *
+         * Default value is true.
+         *
+         * @param alwaysEmitGauges
+         * @return itself
+         */
+        public Builder alwaysEmitGauges(boolean alwaysEmitGauges) {
+            this.alwaysEmitGauges = alwaysEmitGauges;
+            return this;
+        }
+
         public FastForwardHttpReporter build() throws IOException {
             Clock clock = this.clock;
 
@@ -212,7 +231,7 @@ public class FastForwardHttpReporter implements AutoCloseable {
                 this.tagExtractor != null ? this.tagExtractor : new NoopTagExtractor();
 
             return new FastForwardHttpReporter(registry, prefix, unit, time, client,
-                histogramPercentiles, clock, tagExtractor);
+                histogramPercentiles, clock, tagExtractor, alwaysEmitGauges);
         }
     }
 
@@ -280,10 +299,15 @@ public class FastForwardHttpReporter implements AutoCloseable {
         }
 
         final Object gaugeValue = value.getValue();
+        final double doubleValue;
         if (gaugeValue instanceof Number) {
-            double doubleValue = ((Number) gaugeValue).doubleValue();
-            builder.buildPoint(null, doubleValue);
+            doubleValue = ((Number) gaugeValue).doubleValue();
+        } else if (alwaysEmitGauges) {
+            doubleValue = 0D;
+        } else {
+            return;
         }
+        builder.buildPoint(null, doubleValue);
     }
 
     private void reportCounter(

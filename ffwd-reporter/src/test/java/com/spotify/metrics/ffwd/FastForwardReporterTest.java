@@ -1,5 +1,6 @@
 package com.spotify.metrics.ffwd;
 
+import com.codahale.metrics.Gauge;
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -18,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class FastForwardReporterTest {
     private static final int REPORTING_PERIOD = 50;
@@ -51,12 +54,11 @@ public class FastForwardReporterTest {
             .schedule(TimeUnit.MILLISECONDS, REPORTING_PERIOD)
             .fastForward(fastForward)
             .build();
-
-        registry.counter(MetricId.build("hi"));
     }
 
     @Test
     public void shouldReportPeriodicallyWhenStarted() throws Exception {
+        registry.counter(MetricId.build("hi"));
         reporter.start();
 
         verify(fastForward, timeout(REPORTING_PERIOD * 2 + 20).atLeast(2)).send(any(Metric.class));
@@ -64,6 +66,7 @@ public class FastForwardReporterTest {
 
     @Test
     public void shouldStopReportingAfterStop() throws Exception {
+        registry.counter(MetricId.build("hi"));
         final AtomicInteger counter = new AtomicInteger(0);
 
         doAnswer(new Answer() {
@@ -91,6 +94,7 @@ public class FastForwardReporterTest {
 
     @Test
     public void shouldIncludeDerivingMetersInReport() throws Exception {
+        registry.counter(MetricId.build("hi"));
         ArgumentCaptor<Metric> argumentCaptor = ArgumentCaptor.forClass(Metric.class);
 
         doNothing().when(fastForward).send(argumentCaptor.capture());
@@ -133,6 +137,7 @@ public class FastForwardReporterTest {
 
     @Test
     public void shouldAddExtractedTags() throws Exception {
+        registry.counter(MetricId.build("hi"));
         final Map<String, String> tags = ImmutableMap.of("FFWD_TAG_foo", "bar");
 
         final Supplier<Map<String, String>> environmentSupplier =
@@ -161,5 +166,60 @@ public class FastForwardReporterTest {
             ImmutableMap.of("metric_type", "counter", "foo", "bar");
 
         assertEquals(expected, argument.getValue().getAttributes());
+    }
+
+    @Test
+    public void testEmitGaugeValue() throws IOException {
+        registry.register(MetricId.EMPTY.tagged("testcase", "test-emit-gauge-value"), new Gauge<Double>() {
+            @Override
+            public Double getValue() {
+                return 123D;
+            }
+        });
+        reporter.report();
+        ArgumentCaptor<Metric> argument = ArgumentCaptor.forClass(Metric.class);
+        verify(fastForward).send(argument.capture());
+        assertEquals(123D, argument.getValue().getValue());
+    }
+
+    @Test
+    public void testEmitGaugeDefaultValue() throws IOException {
+        reporter = FastForwardReporter
+                .forRegistry(registry)
+                .schedule(TimeUnit.MILLISECONDS, REPORTING_PERIOD)
+                .fastForward(fastForward)
+                .alwaysEmitGauges(true)
+                .build();
+
+        registry.register(MetricId.EMPTY.tagged("testcase", "test-emit-gauge-default"), new Gauge<Double>() {
+            @Override
+            public Double getValue() {
+                return null;
+            }
+        });
+        reporter.report();
+        ArgumentCaptor<Metric> argument = ArgumentCaptor.forClass(Metric.class);
+        verify(fastForward).send(argument.capture());
+        assertEquals(0D, argument.getValue().getValue());
+    }
+
+    @Test
+    public void testDontEmitGauge() throws IOException {
+        reporter = FastForwardReporter
+                .forRegistry(registry)
+                .schedule(TimeUnit.MILLISECONDS, REPORTING_PERIOD)
+                .fastForward(fastForward)
+                .alwaysEmitGauges(false)
+                .build();
+
+        registry.register(MetricId.EMPTY.tagged("testcase", "test-dont-emit-gauge"), new Gauge<Double>() {
+            @Override
+            public Double getValue() {
+                return null;
+            }
+        });
+        reporter.report();
+
+        verifyZeroInteractions(fastForward);
     }
 }

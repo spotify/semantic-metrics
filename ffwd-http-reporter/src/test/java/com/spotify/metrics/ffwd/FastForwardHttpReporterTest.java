@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import com.codahale.metrics.Gauge;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.spotify.ffwd.http.Batch;
@@ -19,10 +20,13 @@ import com.spotify.metrics.core.SemanticMetricRegistry;
 import com.spotify.metrics.ffwdhttp.Clock;
 import com.spotify.metrics.ffwdhttp.FastForwardHttpReporter;
 import com.spotify.metrics.tags.EnvironmentTagExtractor;
+
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,11 +61,11 @@ public class FastForwardHttpReporterTest {
             .prefix(MetricId.build("prefix").tagged(commonTags))
             .clock(fixedClock)
             .build();
+        doReturn(Observable.<Void>just(null)).when(httpClient).sendBatch(any(Batch.class));
     }
 
     @Test
     public void someReporting() {
-        doReturn(Observable.<Void>just(null)).when(httpClient).sendBatch(any(Batch.class));
         fixedClock.setCurrentTime(TIME);
 
         registry.counter(MetricId.build("counter"));
@@ -179,4 +183,71 @@ public class FastForwardHttpReporterTest {
         final Map<String, String> commonTags = batch.getValue().getCommonTags();
         assertEquals(ImmutableMap.of("foo", "bar", "bar", "baz"), commonTags);
     }
+
+    @Test
+    public void testEmitGaugeValue() throws IOException {
+        registry.register(MetricId.EMPTY.tagged("testcase", "test-emit-gauge-value"), new Gauge<Double>() {
+            @Override
+            public Double getValue() {
+                return 123D;
+            }
+        });
+        reporter.start();
+        ArgumentCaptor<Batch> batch = ArgumentCaptor.forClass(Batch.class);
+
+        verify(httpClient, timeout(REPORTING_PERIOD * 2 + 20).atLeastOnce()).sendBatch(
+                batch.capture());
+        Batch.Point expected = new Batch.Point("prefix", of("metric_type", "gauge", "testcase", "test-emit-gauge-value", "unit", "n"), 123D, 0);
+        assertEquals(ImmutableList.of(expected), batch.getValue().getPoints());
+    }
+
+    @Test
+    public void testEmitGaugeDefaultValue() throws IOException {
+        reporter = FastForwardHttpReporter
+                .forRegistry(registry, httpClient)
+                .schedule(REPORTING_PERIOD, TimeUnit.MILLISECONDS)
+                .prefix(MetricId.build("prefix").tagged(commonTags))
+                .clock(fixedClock)
+                .alwaysEmitGauges(true)
+                .build();
+
+        registry.register(MetricId.EMPTY.tagged("testcase", "test-emit-gauge-default"), new Gauge<Double>() {
+            @Override
+            public Double getValue() {
+                return null;
+            }
+        });
+        reporter.start();
+        ArgumentCaptor<Batch> batch = ArgumentCaptor.forClass(Batch.class);
+
+        verify(httpClient, timeout(REPORTING_PERIOD * 2 + 20).atLeastOnce()).sendBatch(
+                batch.capture());
+        Batch.Point expected = new Batch.Point("prefix", of("metric_type", "gauge", "testcase", "test-emit-gauge-default", "unit", "n"), 0D, 0);
+        assertEquals(ImmutableList.of(expected), batch.getValue().getPoints());
+    }
+
+    @Test
+    public void testDontEmitGauge() throws IOException {
+        reporter = FastForwardHttpReporter
+                .forRegistry(registry, httpClient)
+                .schedule(REPORTING_PERIOD, TimeUnit.MILLISECONDS)
+                .prefix(MetricId.build("prefix").tagged(commonTags))
+                .clock(fixedClock)
+                .alwaysEmitGauges(false)
+                .build();
+
+        registry.register(MetricId.EMPTY.tagged("testcase", "test-dont-emit-gauge"), new Gauge<Double>() {
+            @Override
+            public Double getValue() {
+                return null;
+            }
+        });
+        reporter.start();
+        ArgumentCaptor<Batch> batch = ArgumentCaptor.forClass(Batch.class);
+
+        verify(httpClient, timeout(REPORTING_PERIOD * 2 + 20).atLeastOnce()).sendBatch(
+                batch.capture());
+        assertEquals(ImmutableList.of(), batch.getValue().getPoints());
+    }
+
 }

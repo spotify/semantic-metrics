@@ -85,27 +85,29 @@ public class FastForwardReporter implements AutoCloseable {
     private final TagExtractor tagExtractor;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final boolean alwaysEmitGauges;
 
     private Set<Percentile> histogramPercentiles;
 
     private FastForwardReporter(
         SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
-        final FastForward client
+        final FastForward client, boolean alwaysEmitGauges
     ) {
-        this(registry, prefix, unit, duration, client, new HashSet<Percentile>());
+        this(registry, prefix, unit, duration, client, new HashSet<Percentile>(), alwaysEmitGauges);
     }
 
     private FastForwardReporter(
         SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
-        FastForward client, Set<Percentile> histogramPercentiles
+        FastForward client, Set<Percentile> histogramPercentiles, boolean alwaysEmitGauges
     ) {
         this(registry, prefix, unit, duration, client, new HashSet<>(histogramPercentiles),
-            new NoopTagExtractor());
+            new NoopTagExtractor(), alwaysEmitGauges);
     }
 
     private FastForwardReporter(
         SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
-        FastForward client, Set<Percentile> histogramPercentiles, TagExtractor tagExtractor
+        FastForward client, Set<Percentile> histogramPercentiles, TagExtractor tagExtractor,
+        boolean alwaysEmitGauges
     ) {
         this.registry = registry;
         this.prefix = prefix;
@@ -114,6 +116,7 @@ public class FastForwardReporter implements AutoCloseable {
         this.client = client;
         this.histogramPercentiles = new HashSet<>(histogramPercentiles);
         this.tagExtractor = tagExtractor;
+        this.alwaysEmitGauges = alwaysEmitGauges;
     }
 
     public static Builder forRegistry(SemanticMetricRegistry registry) {
@@ -129,6 +132,7 @@ public class FastForwardReporter implements AutoCloseable {
         private MetricId prefix = MetricId.build();
         private FastForward client = null;
         private TagExtractor tagExtractor;
+        private boolean alwaysEmitGauges = true;
 
         private Set<Percentile> histogramPercentiles =
             Sets.newHashSet(new Percentile(0.75), new Percentile(0.99));
@@ -174,6 +178,21 @@ public class FastForwardReporter implements AutoCloseable {
         }
 
         /**
+         * When a gauge returns null, or something that is not a Number, this setting takes effect
+         * If the setting is true, the gauge will emit a metric with value zero.
+         * If the setting is false, the gauge will not emit any metric.
+         *
+         * Default value is true.
+         *
+         * @param alwaysEmitGauges
+         * @return itself
+         */
+        public Builder alwaysEmitGauges(boolean alwaysEmitGauges) {
+            this.alwaysEmitGauges = alwaysEmitGauges;
+            return this;
+        }
+
+        /**
          * Set which quantiles should be reported as percentiles by this reporter. Calling this
          * method overrides the default percentiles (p75, p99).
          *
@@ -194,7 +213,7 @@ public class FastForwardReporter implements AutoCloseable {
             final TagExtractor tagExtractor =
                 this.tagExtractor != null ? this.tagExtractor : new NoopTagExtractor();
             return new FastForwardReporter(registry, prefix, unit, time, client,
-                histogramPercentiles, tagExtractor);
+                histogramPercentiles, tagExtractor, alwaysEmitGauges);
         }
     }
 
@@ -243,16 +262,23 @@ public class FastForwardReporter implements AutoCloseable {
         }
 
         final Object gaugeValue = value.getValue();
+        final double doubleValue;
         if (gaugeValue instanceof Number) {
-            double doubleValue = ((Number) gaugeValue).doubleValue();
-            key = MetricId.join(prefix, key);
-
-            final Metric m = FastForward
-                    .metric(key.getKey())
-                    .attributes(key.getTags())
-                    .attribute(METRIC_TYPE, "gauge");
-            send(m.value(doubleValue));
+            doubleValue = ((Number) gaugeValue).doubleValue();
+        } else {
+            if (alwaysEmitGauges) {
+                doubleValue = 0D;
+            } else {
+                return;
+            }
         }
+
+        key = MetricId.join(prefix, key);
+        final Metric m = FastForward
+                .metric(key.getKey())
+                .attributes(key.getTags())
+                .attribute(METRIC_TYPE, "gauge");
+        send(m.value(doubleValue));
     }
 
     private void reportCounter(MetricId key, Counting value) {

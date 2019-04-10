@@ -142,13 +142,11 @@ public class MetricId implements Comparable<MetricId> {
             throw new IllegalArgumentException("Argument count must be even");
         }
 
-        final Map<String, String> add = new TreeMap<>();
-
+        final TreeMap<String, String> tags = new TreeMap<>(this.tags);
         for (int i = 0; i < pairs.length; i += 2) {
-            add.put(pairs[i], pairs[i + 1]);
+            tags.put(pairs[i], pairs[i + 1]);
         }
-
-        return tagged(add);
+        return new MetricId(key, tags);
     }
 
     /**

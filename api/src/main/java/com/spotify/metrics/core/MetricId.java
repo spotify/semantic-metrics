@@ -150,6 +150,60 @@ public class MetricId implements Comparable<MetricId> {
     }
 
     /**
+     *
+     * Same as {@link #tagged(Map)}, but takes a single pair of arguments.
+     *
+     * @param k1 - key
+     * @param v1 - value
+     * @return A newly created metric name with the specified tags associated with it.
+     * @see #tagged(Map)
+     */
+    public MetricId tagged(String k1, String v1) {
+        final TreeMap<String, String> tags = new TreeMap<>(this.tags);
+        tags.put(k1, v1);
+        return new MetricId(key, tags);
+    }
+
+    /**
+     *
+     * Same as {@link #tagged(Map)}, but takes a single pair of arguments.
+     *
+     * @param k1 - key
+     * @param v1 - value
+     * @param k2 - key
+     * @param v2 - value
+     * @return A newly created metric name with the specified tags associated with it.
+     * @see #tagged(Map)
+     */
+    public MetricId tagged(String k1, String v1, String k2, String v2) {
+        final TreeMap<String, String> tags = new TreeMap<>(this.tags);
+        tags.put(k1, v1);
+        tags.put(k2, v2);
+        return new MetricId(key, tags);
+    }
+
+    /**
+     *
+     * Same as {@link #tagged(Map)}, but takes a single pair of arguments.
+     *
+     * @param k1 - key
+     * @param v1 - value
+     * @param k2 - key
+     * @param v2 - value
+     * @param k3 - key
+     * @param v3 - value
+     * @return A newly created metric name with the specified tags associated with it.
+     * @see #tagged(Map)
+     */
+    public MetricId tagged(String k1, String v1, String k2, String v2, String k3, String v3) {
+        final TreeMap<String, String> tags = new TreeMap<>(this.tags);
+        tags.put(k1, v1);
+        tags.put(k2, v2);
+        tags.put(k3, v3);
+        return new MetricId(key, tags);
+    }
+
+    /**
      * Join the specified set of metric names.
      *
      * @param parts Multiple metric names to join using the separator.

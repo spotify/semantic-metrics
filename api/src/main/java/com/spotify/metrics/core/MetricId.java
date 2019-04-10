@@ -21,6 +21,8 @@
 
 package com.spotify.metrics.core;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -55,20 +57,32 @@ public class MetricId implements Comparable<MetricId> {
     private final int hash;
 
     public MetricId() {
-        this(null, EMPTY_TAGS);
+        this(null, EMPTY_TAGS, true);
     }
 
     public MetricId(String key) {
-        this(key, EMPTY_TAGS);
+        this(key, EMPTY_TAGS, true);
     }
 
     public MetricId(String key, Map<String, String> tags) {
-        this(key, Collections.unmodifiableSortedMap(new TreeMap<>(tags)));
+        this(key, new TreeMap<>(tags), false);
     }
 
+    /**
+     * This should never be used except for a single test case.
+     *
+     * @param key
+     * @param tags
+     */
+    @Deprecated
+    @VisibleForTesting
     MetricId(String key, SortedMap<String, String> tags) {
+        this(key, tags, false);
+    }
+
+    private MetricId(String key, SortedMap<String, String> tags, boolean isAlreadyUnmodifiable) {
         this.key = key;
-        this.tags = tags;
+        this.tags = isAlreadyUnmodifiable ? tags : Collections.unmodifiableSortedMap(tags);
         this.hash = calculateHashCode(key, tags);
     }
 
@@ -84,7 +98,7 @@ public class MetricId implements Comparable<MetricId> {
     /**
      * Get the current set of tags.
      *
-     * @return The tags of the metric id.
+     * @return The tags of the metric id. This is an unmodifiable view of the tags.
      */
     public Map<String, String> getTags() {
         return tags;
@@ -99,7 +113,7 @@ public class MetricId implements Comparable<MetricId> {
      * @return A new metric name relative to the original by the path specified in p.
      */
     public MetricId resolve(final String part) {
-        return new MetricId(extendKey(part), tags);
+        return new MetricId(extendKey(part), tags, true);
     }
 
     private String extendKey(final String part) {
@@ -123,7 +137,7 @@ public class MetricId implements Comparable<MetricId> {
     public MetricId tagged(Map<String, String> add) {
         final TreeMap<String, String> tags = new TreeMap<>(this.tags);
         tags.putAll(add);
-        return new MetricId(key, tags);
+        return new MetricId(key, tags, false);
     }
 
     /**
@@ -142,13 +156,65 @@ public class MetricId implements Comparable<MetricId> {
             throw new IllegalArgumentException("Argument count must be even");
         }
 
-        final Map<String, String> add = new TreeMap<>();
-
+        final TreeMap<String, String> tags = new TreeMap<>(this.tags);
         for (int i = 0; i < pairs.length; i += 2) {
-            add.put(pairs[i], pairs[i + 1]);
+            tags.put(pairs[i], pairs[i + 1]);
         }
+        return new MetricId(key, tags, false);
+    }
 
-        return tagged(add);
+    /**
+     *
+     * Same as {@link #tagged(Map)}, but takes a single key-value pair.
+     *
+     * @param k1 - key
+     * @param v1 - value
+     * @return A newly created metric name with the specified tags associated with it.
+     * @see #tagged(Map)
+     */
+    public MetricId tagged(String k1, String v1) {
+        final TreeMap<String, String> tags = new TreeMap<>(this.tags);
+        tags.put(k1, v1);
+        return new MetricId(key, tags, false);
+    }
+
+    /**
+     *
+     * Same as {@link #tagged(Map)}, but takes two key-value pairs.
+     *
+     * @param k1 - key
+     * @param v1 - value
+     * @param k2 - key
+     * @param v2 - value
+     * @return A newly created metric name with the specified tags associated with it.
+     * @see #tagged(Map)
+     */
+    public MetricId tagged(String k1, String v1, String k2, String v2) {
+        final TreeMap<String, String> tags = new TreeMap<>(this.tags);
+        tags.put(k1, v1);
+        tags.put(k2, v2);
+        return new MetricId(key, tags, false);
+    }
+
+    /**
+     *
+     * Same as {@link #tagged(Map)}, but takes three key-value pairs.
+     *
+     * @param k1 - key
+     * @param v1 - value
+     * @param k2 - key
+     * @param v2 - value
+     * @param k3 - key
+     * @param v3 - value
+     * @return A newly created metric name with the specified tags associated with it.
+     * @see #tagged(Map)
+     */
+    public MetricId tagged(String k1, String v1, String k2, String v2, String k3, String v3) {
+        final TreeMap<String, String> tags = new TreeMap<>(this.tags);
+        tags.put(k1, v1);
+        tags.put(k2, v2);
+        tags.put(k3, v3);
+        return new MetricId(key, tags, false);
     }
 
     /**
@@ -197,10 +263,10 @@ public class MetricId implements Comparable<MetricId> {
         }
 
         if (parts.length == 1) {
-            return new MetricId(parts[0], EMPTY_TAGS);
+            return new MetricId(parts[0], EMPTY_TAGS, true);
         }
 
-        return new MetricId(key(parts), EMPTY_TAGS);
+        return new MetricId(key(parts), EMPTY_TAGS, true);
     }
 
     @Override

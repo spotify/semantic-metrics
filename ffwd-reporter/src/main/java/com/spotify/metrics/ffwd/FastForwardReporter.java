@@ -182,6 +182,8 @@ public class FastForwardReporter implements AutoCloseable {
          */
         public Builder histogramQuantiles(double... quantiles) {
             histogramPercentiles = new HashSet<>();
+            histogramPercentiles.add(new Percentile(0.75));
+            histogramPercentiles.add(new Percentile(0.99));
             for (double q : quantiles) {
                 histogramPercentiles.add(new Percentile(q));
             }

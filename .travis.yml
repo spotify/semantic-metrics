@@ -12,5 +12,3 @@ cache:
 
 script:
   - mvn -D environment=test verify
-  # make sure javadocs are ok too
-  - mvn -P release javadoc:javadoc

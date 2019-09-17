@@ -134,4 +134,36 @@ public class MetricIdTest {
         assertEquals(a.hashCode(), b.hashCode());
         assertNotEquals(a, b);
     }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyTags1() {
+        MetricId.EMPTY.getTags().put("x", "y");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyTags2() {
+        MetricId.EMPTY.tagged("k", "v").getTags().put("x", "y");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyTags3() {
+        MetricId.EMPTY.tagged("k", "v", "k", "v").getTags().put("x", "y");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyTags4() {
+        MetricId.EMPTY.tagged("k", "v", "k", "v", "k", "v").getTags().put("x", "y");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyTags5() {
+        MetricId.EMPTY.tagged("k", "v", "k", "v", "k", "v", "k", "v").getTags().put("x", "y");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyTags6() {
+        HashMap<String, String> other = new HashMap<>();
+        other.put("k", "v");
+        MetricId.EMPTY.tagged(other).getTags().put("x", "y");
+    }
 }

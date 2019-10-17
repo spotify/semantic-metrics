@@ -35,6 +35,8 @@ convention.
 As an effect of this, pre-existing plugins for codahale metrics _will not_
 work.
 
+For an example of a semantic metric schema, see [data model](https://spotify.github.io/heroic/docs/data_model#series).
+
 # Installation
 
 Add a dependency in maven.

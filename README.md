@@ -8,6 +8,8 @@ The primary additions includes a replacement for `MetricRegistry` allowing for
 metric names containing tags through
 [MetricId](api/src/main/java/com/spotify/metrics/core/MetricId.java).
 
+For an example of a semantic metric schema, see [data model](https://spotify.github.io/heroic/docs/data_model#series).
+
 # Usage
 
 The following are the interfaces and classes that _has_ to be used from this

@@ -62,11 +62,12 @@ See and run [examples](examples/src/main/java/com/spotify/metrics/example).
 
 # Considerations
 
-#### ```MetricId``` is expensive to create and modify
+#### `MetricIdCache`
 
 If you find yourself in a situation where you create many instances of this
-class (i.e. when reporting metrics), make use of
-[MetricIdCache](api/src/main/java/com/spotify/metrics/core/MetricIdCache.java)
+class (i.e. when reporting metrics) and profiling/benchmarks show a significant 
+amount of time spent constructing MetricId instances, considering making use of
+a [MetricIdCache](api/src/main/java/com/spotify/metrics/core/MetricIdCache.java)
 
 The following is an example integrating with Guava.
 

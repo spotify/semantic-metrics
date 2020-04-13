@@ -238,10 +238,6 @@ public class FastForwardReporter implements AutoCloseable {
     private void reportGauge(
         MetricId key, @SuppressWarnings("rawtypes") Gauge value
     ) {
-        if (value == null) {
-            return;
-        }
-
         key = MetricId.join(prefix, key);
 
         final Metric m = FastForward
@@ -249,7 +245,12 @@ public class FastForwardReporter implements AutoCloseable {
             .attributes(key.getTags())
             .attribute(METRIC_TYPE, "gauge");
 
-        send(m.value(convert(value.getValue())));
+        Object gaugeValue = value.getValue();
+        if (gaugeValue == null) {
+            return;
+        }
+
+        send(m.value(convert(gaugeValue)));
     }
 
     private double convert(Object value) {

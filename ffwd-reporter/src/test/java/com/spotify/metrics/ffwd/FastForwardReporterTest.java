@@ -1,6 +1,5 @@
 package com.spotify.metrics.ffwd;
 
-import com.codahale.metrics.Gauge;
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -13,10 +12,6 @@ import com.spotify.metrics.core.SemanticMetricRegistry;
 import com.spotify.metrics.tags.EnvironmentTagExtractor;
 import eu.toolchain.ffwd.FastForward;
 import eu.toolchain.ffwd.Metric;
-
-import java.io.IOException;
-import java.util.Objects;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,19 +33,10 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class FastForwardReporterTest {
-
     private static final int REPORTING_PERIOD = 50;
-    private static final MetricId COUNTER_ID = MetricId.build("hi");
-    private static final Metric COUNTER_METRIC = FastForward
-            .metric(COUNTER_ID.getKey())
-            .attributes(COUNTER_ID.getTags())
-            .attribute("metric_type", "counter");
-
     FastForwardReporter reporter;
 
     SemanticMetricRegistry registry;
@@ -66,7 +52,7 @@ public class FastForwardReporterTest {
             .fastForward(fastForward)
             .build();
 
-        registry.counter(COUNTER_ID);
+        registry.counter(MetricId.build("hi"));
     }
 
     @Test
@@ -175,34 +161,5 @@ public class FastForwardReporterTest {
             ImmutableMap.of("metric_type", "counter", "foo", "bar");
 
         assertEquals(expected, argument.getValue().getAttributes());
-    }
-
-    @Test
-    public void shouldReportGaugeValue() throws IOException {
-        final Gauge<Long> gauge = () -> 4711L;
-        final MetricId id = MetricId.build("foobar");
-        final Metric expectedMetric = FastForward
-                .metric(id.getKey())
-                .attributes(id.getTags())
-                .attribute("metric_type", "gauge")
-                .value(4711.0);
-
-        registry.register(id, gauge);
-        reporter.report();
-
-        verify(fastForward).send(expectedMetric);
-    }
-
-    @Test
-    public void shouldNotReportNullGaugeValue() throws IOException {
-        final Gauge<Long> gauge = () -> null;
-        registry.register(MetricId.build("foobar"), gauge);
-        reporter.report();
-
-        // Verify that the counter is still reported
-        verify(fastForward).send(COUNTER_METRIC.value(0L));
-
-        // Verify that the gauge was not reported
-        verifyNoMoreInteractions(fastForward);
     }
 }

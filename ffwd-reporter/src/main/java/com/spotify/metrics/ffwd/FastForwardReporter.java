@@ -238,9 +238,6 @@ public class FastForwardReporter implements AutoCloseable {
     private void reportGauge(
         MetricId key, @SuppressWarnings("rawtypes") Gauge value
     ) {
-        if (value == null) {
-            return;
-        }
 
         key = MetricId.join(prefix, key);
 

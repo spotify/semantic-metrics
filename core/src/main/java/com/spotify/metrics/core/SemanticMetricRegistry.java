@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A registry of metric instances.
@@ -112,8 +113,11 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      * @return {@code metric}
      * @throws IllegalArgumentException if the name is already registered
      */
-    public <T extends Metric> T register(final MetricId name, final T metric)
+    public <T extends Metric> T register(@NonNull final MetricId name, @NonNull final T metric)
         throws IllegalArgumentException {
+        if (metric == null) {
+            throw new IllegalArgumentException("A metric cannot be null");
+        }
         if (metric instanceof SemanticMetricSet) {
             registerAll(name, (SemanticMetricSet) metric);
         } else {

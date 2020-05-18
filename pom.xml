@@ -53,6 +53,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <metrics.version>4.0.2</metrics.version>
     <doclint>none</doclint>
+    <!-- This plugin intentionally does not deliver javadoc. -->
+    <!-- Java 11 javadoc command fails from maven. -->
+    <maven.javadoc.skip>true</maven.javadoc.skip>
   </properties>
 
   <dependencyManagement>
@@ -150,7 +153,6 @@
             <version>2.5.3</version>
             <configuration>
               <tagNameFormat>@{project.version}</tagNameFormat>
-              <arguments>-Dmaven.javadoc.skip=true</arguments>
             </configuration>
           </plugin>
           <plugin>

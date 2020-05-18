@@ -72,9 +72,9 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>com.spotify.metrics</groupId>
-         <artifactId>semantic-metrics-ffwd-http-reporter</artifactId>
-         <version>${project.version}</version>
+        <groupId>com.spotify.metrics</groupId>
+        <artifactId>semantic-metrics-ffwd-http-reporter</artifactId>
+        <version>${project.version}</version>
       </dependency>
 
       <dependency>
@@ -149,7 +149,6 @@
             <version>2.5.3</version>
             <configuration>
               <tagNameFormat>@{project.version}</tagNameFormat>
-              <arguments>-Dmaven.javadoc.skip=true</arguments>
             </configuration>
           </plugin>
           <plugin>
@@ -200,6 +199,22 @@
             <id>attach-sources</id>
             <goals>
               <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.2.0</version>
+        <configuration>
+          <source>8</source>
+          <doclint>none</doclint>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
             </goals>
           </execution>
         </executions>

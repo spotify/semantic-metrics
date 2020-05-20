@@ -52,6 +52,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <metrics.version>4.0.2</metrics.version>
+    <maven.compiler.release>11</maven.compiler.release>
   </properties>
 
   <dependencyManagement>
@@ -185,11 +186,13 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
+          <version>3.8.1</version>
+          <configuration>
+            <showWarnings>true</showWarnings>
+            <compilerArgs>
+              <compilerArg>-Xlint:all</compilerArg>
+            </compilerArgs>
+          </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-source-plugin</artifactId>

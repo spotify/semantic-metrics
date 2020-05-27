@@ -1,0 +1,7 @@
+Benchmark                                                                         Mode  Cnt     Score     Error  Units
+OriginalReservoirWithTtlBenchmark.new_updateAndSnapshot                           avgt   25    33.618 ±   2.467  us/op
+OriginalReservoirWithTtlBenchmark.new_updateAndSnapshot:getSnapshot               avgt   25  1413.746 ± 219.156  us/op
+OriginalReservoirWithTtlBenchmark.new_updateAndSnapshot:update                    avgt   25    19.817 ±   0.768  us/op
+OriginalReservoirWithTtlBenchmark.original_updateAndSnapshot                      avgt   25    22.072 ±   1.358  us/op
+OriginalReservoirWithTtlBenchmark.original_updateAndSnapshot:originalGetSnapshot  avgt   25   402.923 ±  77.127  us/op
+OriginalReservoirWithTtlBenchmark.original_updateAndSnapshot:originalUpdate       avgt   25    18.263 ±   1.054  us/op

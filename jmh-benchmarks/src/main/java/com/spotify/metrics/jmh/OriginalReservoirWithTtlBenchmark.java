@@ -2,7 +2,6 @@ package com.spotify.metrics.jmh;
 
 import com.codahale.metrics.Snapshot;
 import com.spotify.metrics.core.HistogramWithTtl;
-import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Group;
@@ -12,7 +11,8 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Threads;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * The benchmark here tries to simulate real-world usage of a Histogram, where several threads are
@@ -33,24 +33,40 @@ import org.openjdk.jmh.annotations.Threads;
 public class OriginalReservoirWithTtlBenchmark {
 
   private HistogramWithTtl histogram;
+  private OriginalHistogramWithTtl originalHistogram;
 
   @Setup
   public void setUp() {
     histogram = new HistogramWithTtl();
+    originalHistogram = new OriginalHistogramWithTtl();
   }
 
   @Benchmark
-  @Group("updateAndSnapshot")
-  @GroupThreads(10)
+  @Group("new_updateAndSnapshot")
+  @GroupThreads(100)
   public void update() {
     histogram.update(42);
   }
 
   @Benchmark
-  @Group("updateAndSnapshot")
+  @Group("new_updateAndSnapshot")
   @GroupThreads(1)
   public Snapshot getSnapshot() {
     return histogram.getSnapshot();
+  }
+
+  @Benchmark
+  @Group("original_updateAndSnapshot")
+  @GroupThreads(100)
+  public void originalUpdate() {
+    originalHistogram.update(42);
+  }
+
+  @Benchmark
+  @Group("original_updateAndSnapshot")
+  @GroupThreads(1)
+  public Snapshot originalGetSnapshot() {
+    return originalHistogram.getSnapshot();
   }
 
 //  public static void main(String[] args) {

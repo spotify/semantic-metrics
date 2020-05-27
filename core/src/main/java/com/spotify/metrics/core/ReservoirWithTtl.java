@@ -21,21 +21,22 @@
 
 package com.spotify.metrics.core;
 
-import static java.util.stream.Collectors.toList;
-
 import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.Snapshot;
-import com.google.common.collect.EvictingQueue;
 
 import java.lang.reflect.Constructor;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
+import static java.util.stream.Collectors.toList;
+
 public class ReservoirWithTtl implements Reservoir {
-    private class ValueAndTimestamp {
+    private static class ValueAndTimestamp {
         public long value;
         public Instant timestamp;
 
@@ -57,7 +58,8 @@ public class ReservoirWithTtl implements Reservoir {
 
     private final Reservoir delegate;
 
-    private final EvictingQueue<ValueAndTimestamp> valueBuffer;
+    private final ConcurrentLinkedDeque<ValueAndTimestamp> valueBuffer;
+    private final LongAdder valueBufferSize;
 
     private final Supplier<Instant> now;
 
@@ -105,16 +107,15 @@ public class ReservoirWithTtl implements Reservoir {
         this.now = now;
         this.ttlSeconds = ttlSeconds;
         this.bufferSize = ttlSeconds * minimumRate;
-        this.valueBuffer = EvictingQueue.create(bufferSize);
+        this.valueBuffer = new ConcurrentLinkedDeque<>();
+        this.valueBufferSize = new LongAdder();
     }
 
     @Override
     public int size() {
-        synchronized (this) {
-            purgeOld();
-            if (useInternalBuffer()) {
-                return valueBuffer.size();
-            }
+        purgeOld();
+        if (useInternalBuffer()) {
+            return valueBufferSize.intValue();
         }
 
         return delegate.size();
@@ -122,33 +123,42 @@ public class ReservoirWithTtl implements Reservoir {
 
     @Override
     public void update(final long value) {
-        synchronized (this) {
-            valueBuffer.add(new ValueAndTimestamp(value, now.get()));
+        while (valueBufferSize.intValue() > bufferSize) {
+            valueBuffer.removeFirst();
+            valueBufferSize.decrement();
         }
+        valueBufferSize.increment();
+        valueBuffer.add(new ValueAndTimestamp(value, now.get()));
 
         delegate.update(value);
     }
 
     @Override
     public Snapshot getSnapshot() {
-        synchronized (this) {
-            purgeOld();
-            if (useInternalBuffer()) {
-                return getInternalSnapshot();
-            }
+        purgeOld();
+        if (useInternalBuffer()) {
+            return getInternalSnapshot();
         }
 
         return delegate.getSnapshot();
     }
 
     private boolean useInternalBuffer() {
-        return valueBuffer.size() < bufferSize;
+        return valueBufferSize.intValue() < bufferSize;
     }
 
     private void purgeOld() {
         final Instant cutoffTime = now.get().minusSeconds(ttlSeconds);
-        while (!valueBuffer.isEmpty() && valueBuffer.peek().timestamp.isBefore(cutoffTime)) {
-            valueBuffer.remove();
+        while (true) {
+            final ValueAndTimestamp oldest = valueBuffer.removeFirst();
+            if (oldest == null) {
+                break;
+            }
+            if (!oldest.timestamp.isBefore(cutoffTime)) {
+                valueBuffer.addFirst(oldest);
+                break;
+            }
+            valueBufferSize.decrement();
         }
     }
 

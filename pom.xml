@@ -41,10 +41,11 @@
   <modules>
     <module>api</module>
     <module>core</module>
+    <module>examples</module>
     <module>ffwd-reporter</module>
     <module>ffwd-http-reporter</module>
-    <module>examples</module>
     <module>guava</module>
+    <module>jmh-benchmarks</module>
     <module>remote</module>
     <module>semantic-metrics-bom</module>
   </modules>

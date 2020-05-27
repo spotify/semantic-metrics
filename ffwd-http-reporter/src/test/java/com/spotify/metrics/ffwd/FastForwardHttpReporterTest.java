@@ -3,8 +3,8 @@ package com.spotify.metrics.ffwd;
 import static com.google.common.collect.ImmutableMap.of;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 import com.codahale.metrics.Gauge;
@@ -23,6 +23,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import org.jmock.lib.concurrent.DeterministicScheduler;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +45,7 @@ public class FastForwardHttpReporterTest {
     private HttpClient httpClient;
 
     private Map<String, String> commonTags;
+    DeterministicScheduler executorService;
 
     @Before
     public void setUp() throws Exception {
@@ -50,12 +53,14 @@ public class FastForwardHttpReporterTest {
         fixedClock = new Clock.Fixed(0L);
 
         commonTags = of("foo", "bar");
+        executorService = new DeterministicScheduler();
 
         reporter = FastForwardHttpReporter
             .forRegistry(registry, httpClient)
             .schedule(REPORTING_PERIOD, TimeUnit.MILLISECONDS)
             .prefix(MetricId.build("prefix").tagged(commonTags))
             .clock(fixedClock)
+            .executorService(executorService)
             .build();
     }
 
@@ -140,7 +145,8 @@ public class FastForwardHttpReporterTest {
 
         final ArgumentCaptor<Batch> batch = ArgumentCaptor.forClass(Batch.class);
 
-        verify(httpClient, timeout(REPORTING_PERIOD * 2 + 20).atLeastOnce()).sendBatch(
+        executorService.tick(REPORTING_PERIOD * 2 + 20, TimeUnit.MILLISECONDS);
+        verify(httpClient, atLeastOnce()).sendBatch(
             batch.capture());
 
         for (final Batch b : batch.getAllValues()) {
@@ -164,6 +170,7 @@ public class FastForwardHttpReporterTest {
             .prefix(MetricId.build("prefix").tagged(commonTags))
             .clock(fixedClock)
             .tagExtractor(new EnvironmentTagExtractor(environmentSupplier))
+            .executorService(executorService)
             .build();
 
         doReturn(Observable.<Void>just(null)).when(httpClient).sendBatch(any(Batch.class));
@@ -173,7 +180,8 @@ public class FastForwardHttpReporterTest {
 
         final ArgumentCaptor<Batch> batch = ArgumentCaptor.forClass(Batch.class);
 
-        verify(httpClient, timeout(REPORTING_PERIOD * 2 + 20).atLeastOnce()).sendBatch(
+        executorService.tick(REPORTING_PERIOD * 2 + 20, TimeUnit.MILLISECONDS);
+        verify(httpClient, atLeastOnce()).sendBatch(
             batch.capture());
 
         final Map<String, String> commonTags = batch.getValue().getCommonTags();

@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -73,8 +74,8 @@ public class FastForwardReporter implements AutoCloseable {
         }
     };
 
-    private final ScheduledExecutorService executorService =
-        Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
+    private final ScheduledExecutorService executorService;
+    private final boolean executorOwner;
 
     private final SemanticMetricRegistry registry;
     private final MetricId prefix;
@@ -86,26 +87,13 @@ public class FastForwardReporter implements AutoCloseable {
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private Set<Percentile> histogramPercentiles;
+    private ScheduledFuture<?> scheduledFuture;
 
     private FastForwardReporter(
-        SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
-        final FastForward client
-    ) {
-        this(registry, prefix, unit, duration, client, new HashSet<Percentile>());
-    }
-
-    private FastForwardReporter(
-        SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
-        FastForward client, Set<Percentile> histogramPercentiles
-    ) {
-        this(registry, prefix, unit, duration, client, new HashSet<>(histogramPercentiles),
-            new NoopTagExtractor());
-    }
-
-    private FastForwardReporter(
-        SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
-        FastForward client, Set<Percentile> histogramPercentiles, TagExtractor tagExtractor
-    ) {
+            SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
+            FastForward client, Set<Percentile> histogramPercentiles, TagExtractor tagExtractor,
+            ScheduledExecutorService executorService,
+            boolean executorOwner) {
         this.registry = registry;
         this.prefix = prefix;
         this.unit = unit;
@@ -113,6 +101,8 @@ public class FastForwardReporter implements AutoCloseable {
         this.client = client;
         this.histogramPercentiles = new HashSet<>(histogramPercentiles);
         this.tagExtractor = tagExtractor;
+        this.executorService = executorService;
+        this.executorOwner = executorOwner;
     }
 
     public static Builder forRegistry(SemanticMetricRegistry registry) {
@@ -128,6 +118,7 @@ public class FastForwardReporter implements AutoCloseable {
         private MetricId prefix = MetricId.build();
         private FastForward client = null;
         private TagExtractor tagExtractor;
+        private ScheduledExecutorService executorService;
 
         private Set<Percentile> histogramPercentiles =
             Sets.newHashSet(new Percentile(0.75), new Percentile(0.99));
@@ -172,6 +163,11 @@ public class FastForwardReporter implements AutoCloseable {
             return this;
         }
 
+        public Builder executorService(ScheduledExecutorService executorService) {
+            this.executorService = executorService;
+            return this;
+        }
+
         /**
          * Set which quantiles should be reported as percentiles by this reporter. Calling this
          * method overrides the default percentiles (p75, p99).
@@ -192,8 +188,21 @@ public class FastForwardReporter implements AutoCloseable {
                 this.client != null ? this.client : FastForward.setup(host, port);
             final TagExtractor tagExtractor =
                 this.tagExtractor != null ? this.tagExtractor : new NoopTagExtractor();
+            final boolean executorOwner;
+            final ScheduledExecutorService executorService;
+            if (this.executorService != null) {
+                executorService = this.executorService;
+                executorOwner = false;
+            } else {
+                executorService = createExecutor();
+                executorOwner = true;
+            }
             return new FastForwardReporter(registry, prefix, unit, time, client,
-                histogramPercentiles, tagExtractor);
+                histogramPercentiles, tagExtractor, executorService, executorOwner);
+        }
+
+        private ScheduledExecutorService createExecutor() {
+            return Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
         }
     }
 
@@ -362,7 +371,7 @@ public class FastForwardReporter implements AutoCloseable {
             return;
         }
 
-        executorService.scheduleWithFixedDelay(new Runnable() {
+        scheduledFuture = executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -375,7 +384,12 @@ public class FastForwardReporter implements AutoCloseable {
     }
 
     public void stop() {
-        executorService.shutdown();
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(false);
+        }
+        if (executorOwner) {
+            executorService.shutdown();
+        }
     }
 
     @Override

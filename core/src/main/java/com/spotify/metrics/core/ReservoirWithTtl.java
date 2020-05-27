@@ -28,6 +28,7 @@ import com.codahale.metrics.Snapshot;
 import java.lang.reflect.Constructor;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
@@ -113,20 +114,25 @@ public class ReservoirWithTtl implements Reservoir {
 
     @Override
     public int size() {
-        purgeOld();
-        if (useInternalBuffer()) {
-            return Math.max(0, valueBufferSize.intValue());
+        // This is not used by real code, so we can compute it in an expensive way
+        final List<Long> values = filteredValues();
+        if (useInternalBuffer(values)) {
+            return values.size();
         }
-
         return delegate.size();
     }
 
     @Override
     public void update(final long value) {
+        // Slightly racy - might remove more items than we intend
+        // if multiple threads call update at the same time.
+        // Not a problem in practice though.
         while (valueBufferSize.intValue() >= bufferSize) {
-            valueBuffer.removeFirst();
-            valueBufferSize.decrement();
+            if (valueBuffer.pollFirst() != null) {
+                valueBufferSize.decrement();
+            }
         }
+
         valueBufferSize.increment();
         valueBuffer.add(new ValueAndTimestamp(value, now.get()));
 
@@ -135,40 +141,31 @@ public class ReservoirWithTtl implements Reservoir {
 
     @Override
     public Snapshot getSnapshot() {
-        purgeOld();
-        if (useInternalBuffer()) {
-            return getInternalSnapshot();
+        final List<Long> filteredValues = filteredValues();
+        if (useInternalBuffer(filteredValues)) {
+            return getInternalSnapshot(filteredValues);
         }
-
         return delegate.getSnapshot();
     }
 
-    private boolean useInternalBuffer() {
-        return valueBufferSize.intValue() < bufferSize;
+    private boolean useInternalBuffer(final List<Long> filteredValues) {
+        return filteredValues.size() < bufferSize;
     }
 
-    private void purgeOld() {
-        final Instant cutoffTime = now.get().minusSeconds(ttlSeconds);
-        while (true) {
-            final ValueAndTimestamp oldest = valueBuffer.removeFirst();
-            if (oldest == null) {
-                break;
-            }
-            if (!oldest.timestamp.isBefore(cutoffTime)) {
-                valueBuffer.addFirst(oldest);
-                break;
-            }
-            valueBufferSize.decrement();
-        }
-    }
-
-    private Snapshot getInternalSnapshot() {
+    private Snapshot getInternalSnapshot(final List<Long> filteredValues) {
         try {
             // See comment at static initializer why we need to use constructor reference
-            return (Snapshot) snapshotConstructor.newInstance(
-                valueBuffer.stream().map(v -> v.value).collect(toList()));
+            return (Snapshot) snapshotConstructor.newInstance(filteredValues);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<Long> filteredValues() {
+        final Instant cutoffTime = now.get().minusSeconds(ttlSeconds);
+        return valueBuffer.stream()
+                .filter(valueAndTimestamp -> !valueAndTimestamp.timestamp.isBefore(cutoffTime))
+                .map(v -> v.value)
+                .collect(toList());
     }
 }

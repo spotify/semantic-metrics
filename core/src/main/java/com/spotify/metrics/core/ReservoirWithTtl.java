@@ -115,7 +115,7 @@ public class ReservoirWithTtl implements Reservoir {
     public int size() {
         purgeOld();
         if (useInternalBuffer()) {
-            return valueBufferSize.intValue();
+            return Math.max(0, valueBufferSize.intValue());
         }
 
         return delegate.size();
@@ -123,7 +123,7 @@ public class ReservoirWithTtl implements Reservoir {
 
     @Override
     public void update(final long value) {
-        while (valueBufferSize.intValue() > bufferSize) {
+        while (valueBufferSize.intValue() >= bufferSize) {
             valueBuffer.removeFirst();
             valueBufferSize.decrement();
         }

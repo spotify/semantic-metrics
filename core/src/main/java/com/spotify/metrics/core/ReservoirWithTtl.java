@@ -29,9 +29,8 @@ import java.lang.reflect.Constructor;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toList;
@@ -45,7 +44,13 @@ public class ReservoirWithTtl implements Reservoir {
             this.value = value;
             this.timestamp = timestamp;
         }
+
+        private boolean isTooOld(final Instant cutoffTime) {
+            return timestamp.isBefore(cutoffTime);
+        }
     }
+
+    private static final ValueAndTimestamp DUMMY = new ValueAndTimestamp(0, Instant.MIN);
 
     private static final int DEFAULT_TTL_SECONDS = (int) TimeUnit.MINUTES.toSeconds(5);
 
@@ -59,8 +64,7 @@ public class ReservoirWithTtl implements Reservoir {
 
     private final Reservoir delegate;
 
-    private final ConcurrentLinkedDeque<ValueAndTimestamp> valueBuffer;
-    private final LongAdder valueBufferSize;
+    private final ConcurrentLinkedQueue<ValueAndTimestamp> valueBuffer;
 
     private final Supplier<Instant> now;
 
@@ -108,48 +112,43 @@ public class ReservoirWithTtl implements Reservoir {
         this.now = now;
         this.ttlSeconds = ttlSeconds;
         this.bufferSize = ttlSeconds * minimumRate;
-        this.valueBuffer = new ConcurrentLinkedDeque<>();
-        this.valueBufferSize = new LongAdder();
+
+        // For further optimization, this could probably be replaced with a lock-free circular queue
+        this.valueBuffer = new ConcurrentLinkedQueue<>();
+
+        // Make sure the buffer has a constant size to simplify the circular queue logic
+        for (int i = 0; i < bufferSize; i++) {
+            valueBuffer.add(DUMMY);
+        }
     }
 
     @Override
     public int size() {
-        // This is not used by real code, so we can compute it in an expensive way
-        final List<Long> values = filteredValues();
-        if (useInternalBuffer(values)) {
-            return values.size();
+        if (useInternalBuffer()) {
+            // This is not used by real code, so we can compute it in an expensive way
+            return filteredValues().size();
         }
         return delegate.size();
     }
 
     @Override
     public void update(final long value) {
-        // Slightly racy - might remove more items than we intend
-        // if multiple threads call update at the same time.
-        // Not a problem in practice though.
-        while (valueBufferSize.intValue() >= bufferSize) {
-            if (valueBuffer.pollFirst() != null) {
-                valueBufferSize.decrement();
-            }
-        }
-
-        valueBufferSize.increment();
         valueBuffer.add(new ValueAndTimestamp(value, now.get()));
+        valueBuffer.remove();
 
         delegate.update(value);
     }
 
     @Override
     public Snapshot getSnapshot() {
-        final List<Long> filteredValues = filteredValues();
-        if (useInternalBuffer(filteredValues)) {
-            return getInternalSnapshot(filteredValues);
+        if (useInternalBuffer()) {
+            return getInternalSnapshot(filteredValues());
         }
         return delegate.getSnapshot();
     }
 
-    private boolean useInternalBuffer(final List<Long> filteredValues) {
-        return filteredValues.size() < bufferSize;
+    private boolean useInternalBuffer() {
+        return valueBuffer.peek().isTooOld(getCutoffTime());
     }
 
     private Snapshot getInternalSnapshot(final List<Long> filteredValues) {
@@ -162,10 +161,15 @@ public class ReservoirWithTtl implements Reservoir {
     }
 
     private List<Long> filteredValues() {
-        final Instant cutoffTime = now.get().minusSeconds(ttlSeconds);
+        final Instant cutoffTime = getCutoffTime();
         return valueBuffer.stream()
-                .filter(valueAndTimestamp -> !valueAndTimestamp.timestamp.isBefore(cutoffTime))
+                .filter(valueAndTimestamp -> !valueAndTimestamp.isTooOld(cutoffTime))
                 .map(v -> v.value)
                 .collect(toList());
     }
+
+    private Instant getCutoffTime() {
+        return now.get().minusSeconds(ttlSeconds);
+    }
+
 }

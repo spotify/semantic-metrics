@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,8 +75,8 @@ public class FastForwardHttpReporter implements AutoCloseable {
         }
     };
 
-    private final ScheduledExecutorService executorService =
-        Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
+    private final ScheduledExecutorService executorService;
+    private final boolean executorOwner;
 
     private final SemanticMetricRegistry registry;
     private final MetricId prefix;
@@ -87,19 +88,13 @@ public class FastForwardHttpReporter implements AutoCloseable {
     private final TagExtractor tagExtractor;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private ScheduledFuture<?> scheduledFuture;
 
     private FastForwardHttpReporter(
-        SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
-        HttpClient client, Set<Percentile> histogramPercentiles, Clock clock
-    ) {
-        this(registry, prefix, unit, duration, client, histogramPercentiles, clock,
-            new NoopTagExtractor());
-    }
-
-    private FastForwardHttpReporter(
-        SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
-        HttpClient client, Set<Percentile> histogramPercentiles, Clock clock,
-        TagExtractor tagExtractor
+            SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
+            HttpClient client, Set<Percentile> histogramPercentiles, Clock clock,
+            TagExtractor tagExtractor,
+            ScheduledExecutorService executorService, boolean executorOwner
     ) {
         this.registry = registry;
         this.prefix = prefix;
@@ -109,6 +104,8 @@ public class FastForwardHttpReporter implements AutoCloseable {
         this.histogramPercentiles = new HashSet<>(histogramPercentiles);
         this.clock = clock;
         this.tagExtractor = tagExtractor;
+        this.executorService = executorService;
+        this.executorOwner = executorOwner;
     }
 
     public static Builder forRegistry(SemanticMetricRegistry registry, HttpClient client) {
@@ -126,6 +123,7 @@ public class FastForwardHttpReporter implements AutoCloseable {
 
         private Set<Percentile> histogramPercentiles =
             Sets.newHashSet(new Percentile(0.75), new Percentile(0.99));
+        private ScheduledExecutorService executorService;
 
         public Builder(SemanticMetricRegistry registry, HttpClient client) {
             this.registry = registry;
@@ -201,6 +199,11 @@ public class FastForwardHttpReporter implements AutoCloseable {
             return this;
         }
 
+        public Builder executorService(ScheduledExecutorService executorService) {
+            this.executorService = executorService;
+            return this;
+        }
+
         public FastForwardHttpReporter build() throws IOException {
             Clock clock = this.clock;
 
@@ -211,9 +214,23 @@ public class FastForwardHttpReporter implements AutoCloseable {
             final TagExtractor tagExtractor =
                 this.tagExtractor != null ? this.tagExtractor : new NoopTagExtractor();
 
+            final boolean executorOwner;
+            final ScheduledExecutorService executorService;
+            if (this.executorService != null) {
+                executorService = this.executorService;
+                executorOwner = false;
+            } else {
+                executorService = createExecutor();
+                executorOwner = true;
+            }
             return new FastForwardHttpReporter(registry, prefix, unit, time, client,
-                histogramPercentiles, clock, tagExtractor);
+                histogramPercentiles, clock, tagExtractor, executorService, executorOwner);
         }
+
+        private ScheduledExecutorService createExecutor() {
+            return Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
+        }
+
     }
 
     private void report() {
@@ -379,7 +396,7 @@ public class FastForwardHttpReporter implements AutoCloseable {
             return;
         }
 
-        executorService.scheduleWithFixedDelay(new Runnable() {
+        scheduledFuture = executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -392,7 +409,12 @@ public class FastForwardHttpReporter implements AutoCloseable {
     }
 
     public void stop() {
-        executorService.shutdown();
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(false);
+        }
+        if (executorOwner) {
+            executorService.shutdown();
+        }
     }
 
     @Override

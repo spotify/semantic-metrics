@@ -1,16 +1,5 @@
 package com.spotify.metrics.ffwd;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
-
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -23,16 +12,31 @@ import com.spotify.metrics.core.DerivingMeter;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricRegistry;
 import com.spotify.metrics.tags.EnvironmentTagExtractor;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.jmock.lib.concurrent.DeterministicScheduler;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class FastForwardReporterTest {
     private static final int REPORTING_PERIOD = 50;
@@ -40,15 +44,18 @@ public class FastForwardReporterTest {
 
     SemanticMetricRegistry registry;
     FastForward fastForward;
+    DeterministicScheduler executorService;
 
     @Before
     public void setUp() throws Exception {
         registry = new SemanticMetricRegistry();
         fastForward = mock(FastForward.class);
+        executorService = new DeterministicScheduler();
         reporter = FastForwardReporter
             .forRegistry(registry)
             .schedule(TimeUnit.MILLISECONDS, REPORTING_PERIOD)
             .fastForward(fastForward)
+            .executorService(executorService)
             .build();
 
         registry.counter(MetricId.build("hi"));
@@ -58,7 +65,8 @@ public class FastForwardReporterTest {
     public void shouldReportPeriodicallyWhenStarted() throws Exception {
         reporter.start();
 
-        verify(fastForward, timeout(REPORTING_PERIOD * 2 + 20).atLeast(2)).send(any(Metric.class));
+        executorService.tick(REPORTING_PERIOD * 2 + 20, TimeUnit.MILLISECONDS);
+        verify(fastForward, atLeast(2)).send(any(Metric.class));
     }
 
     @Test
@@ -75,15 +83,15 @@ public class FastForwardReporterTest {
 
         reporter.start();
 
-        Thread.sleep(REPORTING_PERIOD);
+        executorService.tick(REPORTING_PERIOD, TimeUnit.MILLISECONDS);
 
         reporter.stop();
 
-        Thread.sleep(REPORTING_PERIOD);
+        executorService.tick(REPORTING_PERIOD, TimeUnit.MILLISECONDS);
 
         int shouldHaveStoppedNow = counter.get();
 
-        Thread.sleep(REPORTING_PERIOD * 2);
+        executorService.tick(REPORTING_PERIOD * 2, TimeUnit.MILLISECONDS);
 
         assertThat(counter.get(), equalTo(shouldHaveStoppedNow));
     }
@@ -103,8 +111,8 @@ public class FastForwardReporterTest {
 
         reporter.start();
 
-        verify(fastForward, timeout(REPORTING_PERIOD + REPORTING_PERIOD / 3).atLeastOnce()).send(
-            any(Metric.class));
+        executorService.tick(REPORTING_PERIOD + REPORTING_PERIOD / 3, TimeUnit.MILLISECONDS);
+        verify(fastForward, atLeastOnce()).send(any(Metric.class));
 
         List<Metric> metrics = argumentCaptor.getAllValues();
 
@@ -142,6 +150,7 @@ public class FastForwardReporterTest {
             .schedule(TimeUnit.MILLISECONDS, REPORTING_PERIOD)
             .fastForward(fastForward)
             .tagExtractor(new EnvironmentTagExtractor(environmentSupplier))
+            .executorService(executorService)
             .build();
 
         ArgumentCaptor<Metric> argument = ArgumentCaptor.forClass(Metric.class);
@@ -152,9 +161,9 @@ public class FastForwardReporterTest {
         counter.inc(1);
         reporter.start();
 
-        verify(fastForward, timeout(REPORTING_PERIOD + REPORTING_PERIOD / 3)
-            .atLeastOnce())
-            .send(argument.capture());
+        executorService.tick(REPORTING_PERIOD + REPORTING_PERIOD / 3, TimeUnit.MILLISECONDS);
+
+        verify(fastForward, atLeastOnce()).send(argument.capture());
 
         final ImmutableMap<String, String> expected =
             ImmutableMap.of("metric_type", "counter", "foo", "bar");

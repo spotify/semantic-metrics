@@ -27,12 +27,9 @@ import com.codahale.metrics.Snapshot;
 
 import java.lang.reflect.Constructor;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Supplier;
 
 public class ReservoirWithTtl implements Reservoir {
@@ -60,13 +57,8 @@ public class ReservoirWithTtl implements Reservoir {
 
     private final int ttlSeconds;
 
-    private final int bufferSize;
-
     private final Reservoir delegate;
-
-    private final AtomicReferenceArray<ValueAndTimestamp> valueBuffer;
-    private final AtomicInteger position;
-
+    private final OverwritingFixedConcurrentRingBuffer<ValueAndTimestamp> valueBuffer;
     private final Supplier<Instant> now;
 
     static {
@@ -112,14 +104,8 @@ public class ReservoirWithTtl implements Reservoir {
         this.delegate = delegate;
         this.now = now;
         this.ttlSeconds = ttlSeconds;
-        this.bufferSize = ttlSeconds * minimumRate;
-
-        this.valueBuffer = new AtomicReferenceArray<>(bufferSize);
-        this.position = new AtomicInteger(0);
-
-        for (int i = 0; i < bufferSize; i++) {
-            valueBuffer.set(i, DUMMY);
-        }
+        final int bufferSize = ttlSeconds * minimumRate;
+        this.valueBuffer = new OverwritingFixedConcurrentRingBuffer<>(DUMMY, bufferSize);
     }
 
     @Override
@@ -133,10 +119,7 @@ public class ReservoirWithTtl implements Reservoir {
 
     @Override
     public void update(final long value) {
-        // Make sure this is not negative
-        final int index = (position.getAndIncrement() & 0x7FFFFFFF) % bufferSize;
-        valueBuffer.set(index, new ValueAndTimestamp(value, now.get()));
-
+        valueBuffer.add(new ValueAndTimestamp(value, now.get()));
         delegate.update(value);
     }
 
@@ -152,25 +135,7 @@ public class ReservoirWithTtl implements Reservoir {
         // It's hard to reliably find the tail position, so just check all elements instead
         // TODO: it would probably be enough of as a heuristic to check every N elements
         final Instant cutoffTime = getCutoffTime();
-
-        // Old elements are at the tail, which is just after the head,
-        // so start searching there (though the tail keeps moving...)
-        final int start = (position.get() & 0x7FFFFFFF) % bufferSize;
-        for (int i = start; i < bufferSize; i++) {
-            final ValueAndTimestamp value = valueBuffer.get(i);
-            if (value.isTooOld(cutoffTime)) {
-                return true;
-            }
-        }
-
-        // Scan the skipped part of the buffer too
-        for (int i = 0; i < start; i++) {
-            final ValueAndTimestamp value = valueBuffer.get(i);
-            if (value.isTooOld(cutoffTime)) {
-                return true;
-            }
-        }
-        return false;
+        return valueBuffer.anyMatch(value -> value.isTooOld(cutoffTime));
     }
 
     private Snapshot getInternalSnapshot(final List<Long> filteredValues) {
@@ -184,14 +149,7 @@ public class ReservoirWithTtl implements Reservoir {
 
     private List<Long> filteredValues() {
         final Instant cutoffTime = getCutoffTime();
-        final ArrayList<Long> res = new ArrayList<>(bufferSize);
-        for (int i = 0; i < bufferSize; i++) {
-            final ValueAndTimestamp value = valueBuffer.get(i);
-            if (!value.isTooOld(cutoffTime)) {
-                res.add(value.value);
-            }
-        }
-        return res;
+        return valueBuffer.getSnapshot(value -> !value.isTooOld(cutoffTime), value -> value.value);
     }
 
     private Instant getCutoffTime() {

@@ -48,24 +48,27 @@ public class MetricId implements Comparable<MetricId> {
     public static final String SEPARATOR = ".";
     public static final SortedMap<String, String> EMPTY_TAGS =
         Collections.unmodifiableSortedMap(new TreeMap<String, String>());
+    public static final SortedMap<String, String> EMPTY_RESOURCES =
+        Collections.unmodifiableSortedMap(new TreeMap<String, String>());
     public static final MetricId EMPTY = new MetricId();
 
     private final String key;
     private final SortedMap<String, String> tags;
+    private final SortedMap<String, String> resources;
     // store hash since these objects are immutable and
     // it will speed up hashing/comparison operations.
     private final int hash;
 
     public MetricId() {
-        this(null, EMPTY_TAGS, true);
+        this(null, EMPTY_TAGS, EMPTY_RESOURCES, true);
     }
 
     public MetricId(String key) {
-        this(key, EMPTY_TAGS, true);
+        this(key, EMPTY_TAGS, EMPTY_RESOURCES, true);
     }
 
-    public MetricId(String key, Map<String, String> tags) {
-        this(key, new TreeMap<>(tags), false);
+    public MetricId(String key, Map<String, String> tags, Map<String, String> resources) {
+        this(key, new TreeMap<>(tags), new TreeMap<>(resources), false);
     }
 
     /**
@@ -73,17 +76,20 @@ public class MetricId implements Comparable<MetricId> {
      *
      * @param key
      * @param tags
+     * @param resources
      */
     @Deprecated
     @VisibleForTesting
-    MetricId(String key, SortedMap<String, String> tags) {
-        this(key, tags, false);
+    MetricId(String key, SortedMap<String, String> tags, SortedMap<String, String> resources) {
+        this(key, tags, resources, false);
     }
 
-    private MetricId(String key, SortedMap<String, String> tags, boolean isAlreadyUnmodifiable) {
+    private MetricId(String key, SortedMap<String, String> tags,
+     SortedMap<String, String> resources, boolean isAlreadyUnmodifiable) {
         this.key = key;
         this.tags = isAlreadyUnmodifiable ? tags : Collections.unmodifiableSortedMap(tags);
-        this.hash = calculateHashCode(key, tags);
+        this.resources = isAlreadyUnmodifiable ? resources : Collections.unmodifiableSortedMap(resources);
+        this.hash = calculateHashCode(key, tags, resources);
     }
 
     /**
@@ -105,6 +111,15 @@ public class MetricId implements Comparable<MetricId> {
     }
 
     /**
+     * Get the current set of resources.
+     *
+     * @return The resources of the metric id. This is an unmodifiable view of the resources.
+     */
+    public Map<String, String> getResources() {
+        return resources;
+    }
+
+    /**
      * Build the MetricName that is this with another path appended to it.
      * <p>
      * The new MetricName inherits the tags of this one.
@@ -113,7 +128,7 @@ public class MetricId implements Comparable<MetricId> {
      * @return A new metric name relative to the original by the path specified in p.
      */
     public MetricId resolve(final String part) {
-        return new MetricId(extendKey(part), tags, true);
+        return new MetricId(extendKey(part), tags, resources, true);
     }
 
     private String extendKey(final String part) {
@@ -131,13 +146,14 @@ public class MetricId implements Comparable<MetricId> {
     /**
      * Add tags to a metric name and return the newly created MetricName.
      *
-     * @param add Tags to add.
+     * @param addTags Tags to add.
      * @return A newly created metric name with the specified tags associated with it.
      */
-    public MetricId tagged(Map<String, String> add) {
+    public MetricId tagged(Map<String, String> addTags) {
         final TreeMap<String, String> tags = new TreeMap<>(this.tags);
-        tags.putAll(add);
-        return new MetricId(key, tags, false);
+        tags.putAll(addTags);
+
+        return new MetricId(key, tags, resources, false);
     }
 
     /**
@@ -160,7 +176,8 @@ public class MetricId implements Comparable<MetricId> {
         for (int i = 0; i < pairs.length; i += 2) {
             tags.put(pairs[i], pairs[i + 1]);
         }
-        return new MetricId(key, tags, false);
+
+        return new MetricId(key, tags, resources, false);
     }
 
     /**
@@ -175,7 +192,7 @@ public class MetricId implements Comparable<MetricId> {
     public MetricId tagged(String k1, String v1) {
         final TreeMap<String, String> tags = new TreeMap<>(this.tags);
         tags.put(k1, v1);
-        return new MetricId(key, tags, false);
+        return new MetricId(key, tags, resources, false);
     }
 
     /**
@@ -193,7 +210,7 @@ public class MetricId implements Comparable<MetricId> {
         final TreeMap<String, String> tags = new TreeMap<>(this.tags);
         tags.put(k1, v1);
         tags.put(k2, v2);
-        return new MetricId(key, tags, false);
+        return new MetricId(key, tags, resources, false);
     }
 
     /**
@@ -214,7 +231,20 @@ public class MetricId implements Comparable<MetricId> {
         tags.put(k1, v1);
         tags.put(k2, v2);
         tags.put(k3, v3);
-        return new MetricId(key, tags, false);
+        return new MetricId(key, tags, resources, false);
+    }
+
+    /**
+     * Add tags to a metric name and return the newly created MetricName.
+     *
+     * @param addResourceTags Tags to add.
+     * @return A newly created metric name with the specified tags associated with it.
+     */
+    public MetricId resourceTagged(Map<String, String> addResourceTags) {
+        final TreeMap<String, String> resources = new TreeMap<>(this.resources);
+        tags.putAll(addResourceTags);
+
+        return new MetricId(key, tags, resources, false);
     }
 
     /**
@@ -227,6 +257,7 @@ public class MetricId implements Comparable<MetricId> {
     public static MetricId join(MetricId... parts) {
         final StringBuilder nameBuilder = new StringBuilder();
         final Map<String, String> tags = new HashMap<String, String>();
+        final Map<String, String> resources = new HashMap<String, String>();
 
         boolean first = true;
 
@@ -246,9 +277,13 @@ public class MetricId implements Comparable<MetricId> {
             if (!part.getTags().isEmpty()) {
                 tags.putAll(part.getTags());
             }
+
+            if (!part.getResources().isEmpty()) {
+                resources.putAll(part.getResources());
+            }
         }
 
-        return new MetricId(nameBuilder.toString(), tags);
+        return new MetricId(nameBuilder.toString(), tags, resources);
     }
 
     /**
@@ -263,15 +298,15 @@ public class MetricId implements Comparable<MetricId> {
         }
 
         if (parts.length == 1) {
-            return new MetricId(parts[0], EMPTY_TAGS, true);
+            return new MetricId(parts[0], EMPTY_TAGS, EMPTY_RESOURCES, true);
         }
 
-        return new MetricId(key(parts), EMPTY_TAGS, true);
+        return new MetricId(key(parts), EMPTY_TAGS, EMPTY_RESOURCES, true);
     }
 
     @Override
     public String toString() {
-        return String.format("%s %s", key, tags);
+        return String.format("%s %s %s", key, tags, resources);
     }
 
     @Override
@@ -314,6 +349,10 @@ public class MetricId implements Comparable<MetricId> {
             return false;
         }
 
+        if (!resources.equals(m.resources)) {
+            return false;
+        }
+
         return true;
     }
 
@@ -341,7 +380,14 @@ public class MetricId implements Comparable<MetricId> {
             return k;
         }
 
+        final int r = compareTags(resources.entrySet(), o.resources.entrySet());
+
+        if (r != 0) {
+            return r;
+        }
+
         return compareTags(tags.entrySet(), o.tags.entrySet());
+
     }
 
     private static String key(String... names) {
@@ -430,11 +476,13 @@ public class MetricId implements Comparable<MetricId> {
         return 0;
     }
 
-    private static int calculateHashCode(final String key, final SortedMap<String, String> tags) {
+    private static int calculateHashCode(final String key, final SortedMap<String, String> tags,
+     final SortedMap<String, String> resources) {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((key == null) ? 0 : key.hashCode());
         result = prime * result + tags.hashCode();
+        result = prime * result + resources.hashCode();
         return result;
     }
 }

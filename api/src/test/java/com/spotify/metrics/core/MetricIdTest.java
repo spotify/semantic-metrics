@@ -55,15 +55,32 @@ public class MetricIdTest {
     @Test
     public void testAddTagsVarious() {
         final Map<String, String> refTags = new HashMap<String, String>();
+        final Map<String, String> refResources = new HashMap<String, String>();
         refTags.put("foo", "bar");
         final MetricId test = MetricId.EMPTY.tagged("foo", "bar");
         final MetricId test2 = MetricId.EMPTY.tagged(refTags);
 
-        assertEquals(new MetricId(null, refTags), test);
+        assertEquals(new MetricId(null, refTags, refResources), test);
         assertEquals(refTags, test.getTags());
 
-        assertEquals(new MetricId(null, refTags), test2);
+        assertEquals(new MetricId(null, refTags, refResources), test2);
         assertEquals(refTags, test2.getTags());
+    }
+
+    @Test
+    public void testAddResourcesVarious() {
+        final Map<String, String> refTags = new HashMap<String, String>();
+        final Map<String, String> refResources = new HashMap<String, String>();
+        refTags.put("foo", "bar");
+        refResources.put("bar", "foo");
+        final MetricId test = MetricId.EMPTY.tagged("foo", "bar");
+        final MetricId test2 = MetricId.EMPTY.tagged(refTags);
+
+        assertEquals(new MetricId(null, refTags, refResources), test);
+        assertEquals(refResources, test.getResources());
+
+        assertEquals(new MetricId(null, refTags, refResources), test2);
+        assertEquals(refResources, test2.getResources());
     }
 
     @Test
@@ -134,8 +151,22 @@ public class MetricIdTest {
             ;
         };
 
-        final MetricId a = new MetricId(key, tags);
-        final MetricId b = new MetricId(key, tags);
+        final SortedMap<String, String> resources = new TreeMap<String, String>() {
+            public boolean equals(Object o) {
+                return false;
+            }
+
+            ;
+
+            public int hashCode() {
+                return 42;
+            }
+
+            ;
+        };
+
+        final MetricId a = new MetricId(key, tags, resources);
+        final MetricId b = new MetricId(key, tags, resources);
 
         assertEquals(a.hashCode(), b.hashCode());
         assertNotEquals(a, b);
@@ -168,8 +199,9 @@ public class MetricIdTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyTags6() {
-        HashMap<String, String> other = new HashMap<>();
-        other.put("k", "v");
-        MetricId.EMPTY.tagged(other).getTags().put("x", "y");
+        HashMap<String, String> otherTags = new HashMap<>();
+        HashMap<String, String> otherResourceTags = new HashMap<>();
+        otherTags.put("k", "v");
+        MetricId.EMPTY.tagged(otherTags).getTags().put("x", "y");
     }
 }

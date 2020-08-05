@@ -45,6 +45,7 @@ public class FastForwardHttpReporterTest {
     private HttpClient httpClient;
 
     private Map<String, String> commonTags;
+    private Map<String, String> commonResource;
     DeterministicScheduler executorService;
 
     @Before
@@ -53,6 +54,7 @@ public class FastForwardHttpReporterTest {
         fixedClock = new Clock.Fixed(0L);
 
         commonTags = of("foo", "bar");
+        commonResource = of("bar", "foo");
         executorService = new DeterministicScheduler();
 
         reporter = FastForwardHttpReporter
@@ -85,72 +87,73 @@ public class FastForwardHttpReporterTest {
 
         final Set<Batch.Point> expected = new HashSet<>();
         expected.add(new Batch.Point("prefix.counter",
-            of("unit", "n", "stat", "count", "metric_type", "counter"), 0, TIME));
+            of("unit", "n", "stat", "count", "metric_type", "counter"), of("resource_tag",
+             "test") , 0, TIME));
         expected.add(new Batch.Point("prefix.deriving-meter",
-            of("unit", "n/s", "stat", "5m", "metric_type", "deriving-meter"), 0, TIME));
+            of("unit", "n/s", "stat", "5m", "metric_type", "deriving-meter"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.deriving-meter",
-            of("unit", "n/s", "stat", "1m", "metric_type", "deriving-meter"), 0, TIME));
+            of("unit", "n/s", "stat", "1m", "metric_type", "deriving-meter"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.histogram",
-            of("unit", "n", "stat", "max", "metric_type", "histogram"), 0, TIME));
+            of("unit", "n", "stat", "max", "metric_type", "histogram"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.histogram",
-            of("unit", "n", "stat", "min", "metric_type", "histogram"), 0, TIME));
+            of("unit", "n", "stat", "min", "metric_type", "histogram"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.histogram",
-            of("unit", "n", "stat", "mean", "metric_type", "histogram"), 0, TIME));
+            of("unit", "n", "stat", "mean", "metric_type", "histogram"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.histogram",
-            of("unit", "n", "stat", "p75", "metric_type", "histogram"), 0, TIME));
+            of("unit", "n", "stat", "p75", "metric_type", "histogram"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.histogram",
-            of("unit", "n", "stat", "median", "metric_type", "histogram"), 0, TIME));
+            of("unit", "n", "stat", "median", "metric_type", "histogram"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.histogram",
-            of("unit", "n", "stat", "stddev", "metric_type", "histogram"), 0, TIME));
+            of("unit", "n", "stat", "stddev", "metric_type", "histogram"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.histogram",
-            of("unit", "n", "stat", "p99", "metric_type", "histogram"), 0, TIME));
+            of("unit", "n", "stat", "p99", "metric_type", "histogram"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.meter",
-            of("unit", "spec", "stat", "count", "metric_type", "meter"), 0, TIME));
+            of("unit", "spec", "stat", "count", "metric_type", "meter"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.meter",
-            of("unit", "spec/s", "stat", "1m", "metric_type", "meter"), 0, TIME));
+            of("unit", "spec/s", "stat", "1m", "metric_type", "meter"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.meter",
-            of("unit", "spec/s", "stat", "5m", "metric_type", "meter"), 0, TIME));
+            of("unit", "spec/s", "stat", "5m", "metric_type", "meter"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.meter2",
-            of("unit", "n", "stat", "count", "metric_type", "meter"), 0, TIME));
+            of("unit", "n", "stat", "count", "metric_type", "meter"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.meter2",
-            of("unit", "n/s", "stat", "1m", "metric_type", "meter"), 0, TIME));
+            of("unit", "n/s", "stat", "1m", "metric_type", "meter"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.meter2",
-            of("unit", "n/s", "stat", "5m", "metric_type", "meter"), 0, TIME));
+            of("unit", "n/s", "stat", "5m", "metric_type", "meter"), of("resource_tag", "test"), 0, TIME));
         expected.add(
-            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "max", "metric_type", "timer"),
+            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "max", "metric_type", "timer"), of("resource_tag", "test"),
                 0, TIME));
         expected.add(
-            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "min", "metric_type", "timer"),
+            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "min", "metric_type", "timer"), of("resource_tag", "test"),
                 0, TIME));
         expected.add(new Batch.Point("prefix.timer",
-            of("unit", "ns", "stat", "mean", "metric_type", "timer"), 0, TIME));
+            of("unit", "ns", "stat", "mean", "metric_type", "timer"), of("resource_tag", "test"), 0, TIME));
         expected.add(
-            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "p75", "metric_type", "timer"),
+            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "p75", "metric_type", "timer"), of("resource_tag", "test"),
                 0, TIME));
         expected.add(new Batch.Point("prefix.timer",
-            of("unit", "ns", "stat", "median", "metric_type", "timer"), 0, TIME));
+            of("unit", "ns", "stat", "median", "metric_type", "timer"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.timer",
-            of("unit", "ns", "stat", "stddev", "metric_type", "timer"), 0, TIME));
+            of("unit", "ns", "stat", "stddev", "metric_type", "timer"), of("resource_tag", "test"), 0, TIME));
         expected.add(
-            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "p99", "metric_type", "timer"),
+            new Batch.Point("prefix.timer", of("unit", "ns", "stat", "p99", "metric_type", "timer"), of("resource_tag", "test"),
                 0, TIME));
         expected.add(new Batch.Point("prefix.timer",
-            of("unit", "ns/s", "stat", "1m", "metric_type", "timer"), 0, TIME));
+            of("unit", "ns/s", "stat", "1m", "metric_type", "timer"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.timer",
-            of("unit", "ns/s", "stat", "5m", "metric_type", "timer"), 0, TIME));
+            of("unit", "ns/s", "stat", "5m", "metric_type", "timer"), of("resource_tag", "test"), 0, TIME));
         expected.add(new Batch.Point("prefix.gauge",
-            of("what", "some-gauge", "unit", "n", "metric_type", "gauge"), 0, TIME));
+            of("what", "some-gauge", "unit", "n", "metric_type", "gauge"), of("resource_tag", "test"), 0, TIME));
 
         reporter.start();
 
         final ArgumentCaptor<Batch> batch = ArgumentCaptor.forClass(Batch.class);
 
         executorService.tick(REPORTING_PERIOD * 2 + 20, TimeUnit.MILLISECONDS);
-        verify(httpClient, atLeastOnce()).sendBatch(
-            batch.capture());
+        verify(httpClient, atLeastOnce()).sendBatch(batch.capture());
 
         for (final Batch b : batch.getAllValues()) {
             assertEquals(commonTags, b.getCommonTags());
+            assertEquals(commonResource, b.getCommonResource());
             final Set<Batch.Point> points = new HashSet<>(b.getPoints());
             points.removeAll(expected);
             assertEquals("expected empty set of points", ImmutableSet.of(), points);

@@ -1,18 +1,5 @@
 package com.spotify.metrics.core;
 
-import com.codahale.metrics.Metric;
-import com.google.common.collect.ImmutableMap;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.concurrent.ConcurrentMap;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
@@ -24,9 +11,22 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.codahale.metrics.Metric;
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.concurrent.ConcurrentMap;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
 @RunWith(MockitoJUnitRunner.class)
 public class SemanticMetricRegistryTest {
     private static final Map<String, String> tags = ImmutableMap.of("hello", "world");
+    private static final Map<String, String> resources = ImmutableMap.of("goodbye", "world");
 
     @Mock
     private MetricId id;
@@ -44,7 +44,7 @@ public class SemanticMetricRegistryTest {
     private SemanticMetricRegistry registry;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         registry = spy(new SemanticMetricRegistry(metrics));
     }
 
@@ -61,6 +61,8 @@ public class SemanticMetricRegistryTest {
     public void testRegisterAll() {
         doReturn("a").when(id2).getKey();
         doReturn(tags).when(id2).getTags();
+        doReturn(resources).when(id2).getResources();
+
 
         final Map<MetricId, Metric> metricSet = ImmutableMap.of(id2, metric);
 
@@ -69,11 +71,11 @@ public class SemanticMetricRegistryTest {
 
         registry.registerAll(id, set);
 
-        verify(registry).register(new MetricId("a", tags), metric);
+        verify(registry).register(new MetricId("a", tags, resources), metric);
     }
 
     @Test
-    public void shouldNotifyOnAdded() throws Exception {
+    public void shouldNotifyOnAdded() {
         final Metric metric = mock(Metric.class);
 
         doNothing().when(registry).onMetricAdded(id, metric);
@@ -86,7 +88,7 @@ public class SemanticMetricRegistryTest {
     }
 
     @Test
-    public void shouldNotifyOnRemoved() throws Exception {
+    public void shouldNotifyOnRemoved() {
         final Metric metric = mock(Metric.class);
 
         doNothing().when(registry).onMetricAdded(id, metric);
@@ -118,7 +120,7 @@ public class SemanticMetricRegistryTest {
     }
 
     @Test
-    public void shouldGetDerivingMetrics() throws Exception {
+    public void shouldGetDerivingMetrics() {
         final SemanticMetricFilter filter = mock(SemanticMetricFilter.class);
         final SortedMap<MetricId, DerivingMeter> result = mock(SortedMap.class);
 
@@ -130,7 +132,7 @@ public class SemanticMetricRegistryTest {
     }
 
     @Test
-    public void testGetOrAddAlreadyExists() throws Exception {
+    public void testGetOrAddAlreadyExists() {
         SemanticMetricBuilder<Metric> builder = mock(SemanticMetricBuilder.class);
         doReturn(metric).when(metrics).get(id);
         doReturn(true).when(builder).isInstance(metric);
@@ -142,7 +144,7 @@ public class SemanticMetricRegistryTest {
     }
 
     @Test
-    public void testGetOrAddNew() throws Exception {
+    public void testGetOrAddNew() {
         SemanticMetricBuilder<Metric> builder = mock(SemanticMetricBuilder.class);
         doReturn(null).when(metrics).get(id);
 
@@ -157,7 +159,7 @@ public class SemanticMetricRegistryTest {
     }
 
     @Test
-    public void testAddIfAbsentMissing() throws Exception {
+    public void testAddIfAbsentMissing() {
         doReturn(null).when(metrics).putIfAbsent(id, metric);
         doNothing().when(registry).onMetricAdded(id, metric);
 
@@ -168,7 +170,7 @@ public class SemanticMetricRegistryTest {
     }
 
     @Test
-    public void testAddIfAbsentExists() throws Exception {
+    public void testAddIfAbsentExists() {
         doReturn(metric2).when(metrics).putIfAbsent(id, metric);
         doNothing().when(registry).onMetricAdded(id, metric);
 

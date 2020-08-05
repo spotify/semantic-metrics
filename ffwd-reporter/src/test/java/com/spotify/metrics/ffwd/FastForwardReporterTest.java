@@ -1,5 +1,18 @@
 package com.spotify.metrics.ffwd;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+import com.codahale.metrics.Counter;
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -12,31 +25,17 @@ import com.spotify.metrics.core.DerivingMeter;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricRegistry;
 import com.spotify.metrics.tags.EnvironmentTagExtractor;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jmock.lib.concurrent.DeterministicScheduler;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 public class FastForwardReporterTest {
     private static final int REPORTING_PERIOD = 50;
@@ -149,7 +148,7 @@ public class FastForwardReporterTest {
             .forRegistry(registry)
             .schedule(TimeUnit.MILLISECONDS, REPORTING_PERIOD)
             .fastForward(fastForward)
-            .tagExtractor(new EnvironmentTagExtractor(environmentSupplier))
+            .tagExtractor(new EnvironmentTagExtractor(environmentSupplier::get))
             .executorService(executorService)
             .build();
 
@@ -157,7 +156,7 @@ public class FastForwardReporterTest {
 
         MetricId name = MetricId.build("thename");
 
-        final com.codahale.metrics.Counter counter = registry.counter(name);
+        final Counter counter = registry.counter(name);
         counter.inc(1);
         reporter.start();
 

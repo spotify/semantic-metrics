@@ -36,6 +36,8 @@ import com.spotify.metrics.core.DerivingMeter;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricFilter;
 import com.spotify.metrics.core.SemanticMetricRegistry;
+import com.spotify.metrics.resources.NoopResourceTagExtractor;
+import com.spotify.metrics.resources.ResourceExtractor;
 import com.spotify.metrics.tags.NoopTagExtractor;
 import com.spotify.metrics.tags.TagExtractor;
 import java.io.IOException;
@@ -86,6 +88,7 @@ public class FastForwardHttpReporter implements AutoCloseable {
     private final Set<Percentile> histogramPercentiles;
     private final Clock clock;
     private final TagExtractor tagExtractor;
+    private final ResourceExtractor resourceExtractor;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private ScheduledFuture<?> scheduledFuture;
@@ -93,7 +96,7 @@ public class FastForwardHttpReporter implements AutoCloseable {
     private FastForwardHttpReporter(
             SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
             HttpClient client, Set<Percentile> histogramPercentiles, Clock clock,
-            TagExtractor tagExtractor,
+            TagExtractor tagExtractor, ResourceExtractor resourceExtractor,
             ScheduledExecutorService executorService, boolean executorOwner
     ) {
         this.registry = registry;
@@ -104,6 +107,7 @@ public class FastForwardHttpReporter implements AutoCloseable {
         this.histogramPercentiles = new HashSet<>(histogramPercentiles);
         this.clock = clock;
         this.tagExtractor = tagExtractor;
+        this.resourceExtractor = resourceExtractor;
         this.executorService = executorService;
         this.executorOwner = executorOwner;
     }
@@ -120,6 +124,8 @@ public class FastForwardHttpReporter implements AutoCloseable {
         private MetricId prefix = MetricId.build();
         private Clock clock;
         private TagExtractor tagExtractor;
+        private ResourceExtractor resourceExtractor;
+
 
         private Set<Percentile> histogramPercentiles =
             Sets.newHashSet(new Percentile(0.75), new Percentile(0.99));
@@ -199,6 +205,16 @@ public class FastForwardHttpReporter implements AutoCloseable {
             return this;
         }
 
+        /**
+         * ResourceExtractor implementation that will be used in the reporter.
+         *
+         * @return this builder
+         */
+        public Builder resourceExtractor(ResourceExtractor resourceExtractor) {
+            this.resourceExtractor = resourceExtractor;
+            return this;
+        }
+
         public Builder executorService(ScheduledExecutorService executorService) {
             this.executorService = executorService;
             return this;
@@ -214,6 +230,10 @@ public class FastForwardHttpReporter implements AutoCloseable {
             final TagExtractor tagExtractor =
                 this.tagExtractor != null ? this.tagExtractor : new NoopTagExtractor();
 
+            final ResourceExtractor resourceExtractor =
+                this.resourceExtractor != null ? this.resourceExtractor :
+                 new NoopResourceTagExtractor();
+
             final boolean executorOwner;
             final ScheduledExecutorService executorService;
             if (this.executorService != null) {
@@ -224,7 +244,8 @@ public class FastForwardHttpReporter implements AutoCloseable {
                 executorOwner = true;
             }
             return new FastForwardHttpReporter(registry, prefix, unit, time, client,
-                histogramPercentiles, clock, tagExtractor, executorService, executorOwner);
+                histogramPercentiles, clock, tagExtractor, resourceExtractor, executorService,
+                 executorOwner);
         }
 
         private ScheduledExecutorService createExecutor() {
@@ -275,7 +296,9 @@ public class FastForwardHttpReporter implements AutoCloseable {
         }
 
         final Map<String, String> commonTags = tagExtractor.addTags(prefix.getTags());
-        final Batch batch = new Batch(commonTags, points);
+        final Map<String, String > commonResource =
+            resourceExtractor.addResources(prefix.getResources());
+        final Batch batch = new Batch(commonTags, commonResource, points);
 
         client.sendBatch(batch).toCompletable().await();
     }
@@ -286,7 +309,8 @@ public class FastForwardHttpReporter implements AutoCloseable {
     ) {
         final String key = joinKeys(prefix, id);
         final String unit = getUnit(id.getTags());
-        return new BatchBuilder(points, timestamp, key, id.getTags(), unit, metricType);
+        return new BatchBuilder(points, timestamp, key, id.getTags(), id.getResources(), unit,
+         metricType);
     }
 
     private void reportGauge(
@@ -427,17 +451,20 @@ public class FastForwardHttpReporter implements AutoCloseable {
         private final long timestamp;
         private final String key;
         private final Map<String, String> tags;
+        private final Map<String, String> resources;
         private final String unit;
         private final String metricType;
 
         public BatchBuilder(
             final List<Batch.Point> points, final long timestamp, final String key,
-            final Map<String, String> tags, final String unit, final String metricType
+            final Map<String, String> tags, final Map<String, String> resources, final String unit,
+             final String metricType
         ) {
             this.points = points;
             this.timestamp = timestamp;
             this.key = key;
             this.tags = tags;
+            this.resources = resources;
             this.unit = unit;
             this.metricType = metricType;
         }
@@ -447,15 +474,15 @@ public class FastForwardHttpReporter implements AutoCloseable {
         }
 
         public BatchBuilder withUnit(final String unit) {
-            return new BatchBuilder(points, timestamp, key, tags, unit, metricType);
+            return new BatchBuilder(points, timestamp, key, tags, resources, unit, metricType);
         }
 
         public BatchBuilder withMetricType(final String metricType) {
-            return new BatchBuilder(points, timestamp, key, tags, unit, metricType);
+            return new BatchBuilder(points, timestamp, key, tags, resources, unit, metricType);
         }
 
         public void buildPoint(final String stat, final double value) {
-            points.add(new Batch.Point(key, statsMap(stat), value, timestamp));
+            points.add(new Batch.Point(key, statsMap(stat), resources, value, timestamp));
         }
 
         private Map<String, String> statsMap(

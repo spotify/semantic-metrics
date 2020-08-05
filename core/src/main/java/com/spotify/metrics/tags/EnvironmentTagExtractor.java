@@ -21,10 +21,9 @@
 
 package com.spotify.metrics.tags;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Extract tags from the system environment variables.
@@ -35,16 +34,12 @@ public class EnvironmentTagExtractor implements TagExtractor {
     /**
      * Prefix of environment variable that adds additional tags.
      */
-    public static final String FFWD_TAG_PREFIX = "FFWD_TAG_";
+    private static final String FFWD_TAG_PREFIX = "FFWD_TAG_";
 
-    public static Map<String, String> environmentTags;
+    private static Map<String, String> environmentTags;
 
-    public EnvironmentTagExtractor() {
-        this(Suppliers.ofInstance(System.getenv()));
-    }
-
-    public EnvironmentTagExtractor(Supplier<Map<String, String>> enviromentSupplier) {
-        this.environmentTags = filterEnvironmentTags(enviromentSupplier.get());
+    public EnvironmentTagExtractor(Supplier<Map<String, String>> environmentSupplier) {
+        environmentTags = filterEnvironmentTags(environmentSupplier.get());
     }
 
     /**
@@ -66,7 +61,7 @@ public class EnvironmentTagExtractor implements TagExtractor {
      *
      * @return extracted tags.
      */
-    public static Map<String, String> filterEnvironmentTags(final Map<String, String> env) {
+    static Map<String, String> filterEnvironmentTags(final Map<String, String> env) {
         final Map<String, String> tags = new HashMap<>();
 
         for (final Map.Entry<String, String> e : env.entrySet()) {

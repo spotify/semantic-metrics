@@ -55,15 +55,31 @@ public class MetricIdTest {
     @Test
     public void testAddTagsVarious() {
         final Map<String, String> refTags = new HashMap<String, String>();
+        final Map<String, String> refResources = new HashMap<String, String>();
         refTags.put("foo", "bar");
         final MetricId test = MetricId.EMPTY.tagged("foo", "bar");
         final MetricId test2 = MetricId.EMPTY.tagged(refTags);
 
-        assertEquals(new MetricId(null, refTags), test);
+        assertEquals(new MetricId(null, refTags, refResources), test);
         assertEquals(refTags, test.getTags());
 
-        assertEquals(new MetricId(null, refTags), test2);
+        assertEquals(new MetricId(null, refTags, refResources), test2);
         assertEquals(refTags, test2.getTags());
+    }
+
+    @Test
+    public void testAddResourcesVarious() {
+        final Map<String, String> refTags = new HashMap<String, String>();
+        final Map<String, String> refResources = new HashMap<String, String>();
+        refResources.put("bar", "foo");
+        final MetricId test = MetricId.EMPTY.resourceTagged("bar", "foo");
+        final MetricId test2 = MetricId.EMPTY.resourceTagged(refResources);
+
+        assertEquals(new MetricId(null, refTags, refResources), test);
+        assertEquals(refResources, test.getResources());
+
+        assertEquals(new MetricId(null, refTags, refResources), test2);
+        assertEquals(refResources, test2.getResources());
     }
 
     @Test
@@ -125,17 +141,23 @@ public class MetricIdTest {
                 return false;
             }
 
-            ;
+            public int hashCode() {
+                return 42;
+            }
+        };
+
+        final SortedMap<String, String> resources = new TreeMap<String, String>() {
+            public boolean equals(Object o) {
+                return false;
+            }
 
             public int hashCode() {
                 return 42;
             }
-
-            ;
         };
 
-        final MetricId a = new MetricId(key, tags);
-        final MetricId b = new MetricId(key, tags);
+        final MetricId a = new MetricId(key, tags, resources);
+        final MetricId b = new MetricId(key, tags, resources);
 
         assertEquals(a.hashCode(), b.hashCode());
         assertNotEquals(a, b);
@@ -148,28 +170,43 @@ public class MetricIdTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyTags2() {
-        MetricId.EMPTY.tagged("k", "v").getTags().put("x", "y");
+        MetricId.EMPTY.tagged("k", "v").resourceTagged("v", "k").getTags().put("x", "y");
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyTags3() {
-        MetricId.EMPTY.tagged("k", "v", "k", "v").getTags().put("x", "y");
+        MetricId.EMPTY.tagged("k", "v", "k", "v").resourceTagged("v", "k", "v", "k").getTags().put(
+        "x", "y");
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyTags4() {
-        MetricId.EMPTY.tagged("k", "v", "k", "v", "k", "v").getTags().put("x", "y");
+        MetricId.EMPTY.tagged("k", "v", "k", "v", "k", "v")
+        .resourceTagged("v", "k", "v", "k", "v", "k").getTags().put("x", "y");
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyTags5() {
-        MetricId.EMPTY.tagged("k", "v", "k", "v", "k", "v", "k", "v").getTags().put("x", "y");
+        MetricId.EMPTY.tagged("k", "v", "k", "v", "k", "v", "k", "v")
+        .resourceTagged("v", "k", "v", "k", "v", "k", "v", "k").getTags().put("x", "y");
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyTags6() {
         HashMap<String, String> other = new HashMap<>();
+        HashMap<String, String> otherResourceTags = new HashMap<>();
         other.put("k", "v");
-        MetricId.EMPTY.tagged(other).getTags().put("x", "y");
+        otherResourceTags.put("v", "k");
+        MetricId.EMPTY.tagged(other).resourceTagged(otherResourceTags).getTags().put("x", "y");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyResourceTags1() {
+        MetricId.EMPTY.getResources().put("x", "y");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyResourceTags2() {
+        MetricId.EMPTY.tagged("k", "v").resourceTagged("v", "k").getResources().put("x", "y");
     }
 }

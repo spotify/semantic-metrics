@@ -1,17 +1,17 @@
 package com.spotify.metrics.core;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MetricIdTest {
@@ -20,7 +20,7 @@ public class MetricIdTest {
     @Test
     public void testEmpty() throws Exception {
         assertEquals(MetricId.EMPTY_TAGS, MetricId.EMPTY.getTags());
-        assertEquals(null, MetricId.EMPTY.getKey());
+        assertNull(MetricId.EMPTY.getKey());
         assertEquals(MetricId.EMPTY_TAGS, new MetricId().getTags());
 
         assertEquals(new MetricId(), MetricId.EMPTY);
@@ -88,12 +88,18 @@ public class MetricIdTest {
     public void testCompareTo() {
         final MetricId a = MetricId.EMPTY.tagged("foo", "bar");
         final MetricId b = MetricId.EMPTY.tagged("foo", "baz");
+        final MetricId c = MetricId.EMPTY.tagged("foo", null);
 
         assertTrue(a.compareTo(b) != 0);
         assertTrue(b.compareTo(a) != 0);
-        assertTrue(b.compareTo(b) == 0);
+        assertTrue(c.compareTo(a) != 0);
+        assertTrue(a.compareTo(c) != 0);
+        assertEquals(0, b.compareTo(b));
+        assertEquals(0, c.compareTo(c));
         assertTrue(b.resolve("key").compareTo(b) != 0);
         assertTrue(b.compareTo(b.resolve("key")) != 0);
+        assertTrue(c.resolve("key").compareTo(c) != 0);
+        assertTrue(c.compareTo(c.resolve("key")) != 0);
     }
 
     @Test
@@ -102,16 +108,16 @@ public class MetricIdTest {
       final MetricId b = MetricId.EMPTY.tagged("a", "1", "b", "3");
       final MetricId c = MetricId.EMPTY.tagged("a", "1", "b", "3");
 
-      assertTrue(a.compareTo(a) == 0);
+      assertEquals(0, a.compareTo(a));
       assertTrue(a.compareTo(b) != 0);
-      assertTrue(b.compareTo(b) == 0);
+      assertEquals(0, b.compareTo(b));
       assertTrue(b.compareTo(a) != 0);
 
-      assertTrue(b.compareTo(c) == 0);
-      assertTrue(c.compareTo(b) == 0);
+      assertEquals(0, b.compareTo(c));
+      assertEquals(0, c.compareTo(b));
     }
 
-  @Test
+    @Test
     public void testEqualsAndHashCode() {
         // a map which always returns the same hashCode, but is equal to nothing.
         final SortedMap<String, String> tags = new TreeMap<String, String>() {

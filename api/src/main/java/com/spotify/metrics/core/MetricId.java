@@ -413,10 +413,13 @@ public class MetricId implements Comparable<MetricId> {
                 return k;
             }
 
-            final int v = l.getValue().compareTo(r.getValue());
+            if (l.getValue() != null && r.getValue() != null) {
 
-            if (v != 0) {
-                return v;
+                final int v = l.getValue().compareTo(r.getValue());
+
+                if (v != 0) {
+                    return v;
+                }
             }
         }
 

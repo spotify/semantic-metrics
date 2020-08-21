@@ -400,8 +400,8 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     }
 
     /**
-     * Returns a map of all the distributions metrics in the registry and their names which match the
-     * given filter.
+     * Returns a map of all the distributions metrics in the registry and their
+     * names which match the given filter.
      *
      * @param filter the metric filter to match
      * @return a sorted Map of distribution metrics

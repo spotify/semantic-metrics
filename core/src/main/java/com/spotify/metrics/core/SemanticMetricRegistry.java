@@ -165,7 +165,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     }
 
     /**
-     * Creates a new {@link Distribution} and registers it under the given name.
+     * Creates a new {@link Distribution} or return an existing one registers under the given name.
      *
      * @param name the name of the metric
      * @return a new {@link Distribution}
@@ -400,11 +400,11 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     }
 
     /**
-     * Returns a map of all the deriving meters in the registry and their names which match the
+     * Returns a map of all the distributions metrics in the registry and their names which match the
      * given filter.
      *
      * @param filter the metric filter to match
-     * @return all the deriving meters in the registry
+     * @return a sorted Map of distribution metrics
      */
     public SortedMap<MetricId, Distribution> getDistribution(final SemanticMetricFilter filter) {
         return getMetrics(Distribution.class, filter);

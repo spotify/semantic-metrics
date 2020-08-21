@@ -27,11 +27,25 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.Timer;
+import com.spotify.metrics.core.codahale.metrics.ext.Distribution;
 
 /**
  * A quick and easy way of capturing the notion of default metrics.
  */
 public interface SemanticMetricBuilder<T extends Metric> {
+
+    SemanticMetricBuilder<Distribution> DISTRIBUTION = new SemanticMetricBuilder<Distribution>() {
+        @Override
+        public Distribution newMetric() {
+            return new DistributionImpl();
+        }
+
+        @Override
+        public boolean isInstance(final Metric metric) {
+            return Distribution.class.isInstance(metric);
+        }
+    };
+
     SemanticMetricBuilder<Counter> COUNTERS = new SemanticMetricBuilder<Counter>() {
         @Override
         public Counter newMetric() {

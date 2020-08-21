@@ -48,7 +48,6 @@ public class SemanticMetricRegistryAdapterTest {
                 return MetricId.build(metricName);
             }
         };
-
         this.source = SemanticMetricRegistryAdapter.adaptingMetricRegistry(target, idAdapter);
     }
 
@@ -91,6 +90,7 @@ public class SemanticMetricRegistryAdapterTest {
         source.remove("e");
         verify(target).remove(MetricId.build("e"));
     }
+
 
     @Test
     public void silentlyIgnoresExceptions() throws Exception {

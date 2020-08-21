@@ -2,6 +2,7 @@ package com.spotify.metrics.core;
 
 import com.codahale.metrics.Metric;
 import com.google.common.collect.ImmutableMap;
+import com.spotify.metrics.core.codahale.metrics.ext.Distribution;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -127,6 +128,18 @@ public class SemanticMetricRegistryTest {
         assertEquals(result, registry.getDerivingMeters(filter));
 
         verify(registry).getMetrics(DerivingMeter.class, filter);
+    }
+
+    @Test
+    public void shouldGetDistribution() throws Exception {
+        final SemanticMetricFilter filter = mock(SemanticMetricFilter.class);
+        final SortedMap<MetricId, Distribution> result = mock(SortedMap.class);
+
+        doReturn(result).when(registry).getMetrics(Distribution.class, filter);
+
+        assertEquals(result, registry.getDistribution(filter));
+
+        verify(registry).getMetrics(Distribution.class, filter);
     }
 
     @Test

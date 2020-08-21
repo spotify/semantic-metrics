@@ -27,8 +27,9 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
+import com.spotify.metrics.core.codahale.metrics.ext.Distribution;
+import com.spotify.metrics.core.codahale.metrics.ext.MetricRegistryListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,6 +107,29 @@ public class SemanticMetricRegistryAdapter implements MetricRegistryListener {
     public void onTimerRemoved(String name) {
         tryRemove(name);
     }
+
+
+    @Override
+    public void onDerivingMeterAdded(String name, DerivingMeter derivingMeter) {
+        tryRegister(name, derivingMeter);
+    }
+
+    @Override
+    public void onDerivingMeterRemoved(String name) {
+        tryRemove(name);
+    }
+
+    @Override
+    public void onDistributionAdded(String name, Distribution distribution) {
+        tryRegister(name, distribution);
+    }
+
+    @Override
+    public void onDistributionRemoved(String name) {
+        tryRemove(name);
+    }
+
+
 
     private <T extends Metric> void tryRegister(String name, T metric) {
         try {

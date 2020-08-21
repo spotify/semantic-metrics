@@ -38,6 +38,9 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.Timer;
+import com.spotify.metrics.core.codahale.metrics.ext.Distribution;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -49,14 +52,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A registry of metric instances.
  */
 public class SemanticMetricRegistry implements SemanticMetricSet {
     private final ConcurrentMap<MetricId, Metric> metrics;
-    private final List<SemanticMetricRegistryListener> listeners;
+    private final List<SemanticMetricRegistryListenerV2> listeners;
     private final Supplier<Reservoir> defaultReservoirSupplier;
 
     /**
@@ -77,7 +79,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
 
     public SemanticMetricRegistry(final Supplier<Reservoir> defaultReservoirSupplier) {
         this.metrics = new ConcurrentHashMap<MetricId, Metric>();
-        this.listeners = new CopyOnWriteArrayList<SemanticMetricRegistryListener>();
+        this.listeners = new CopyOnWriteArrayList<SemanticMetricRegistryListenerV2>();
         this.defaultReservoirSupplier = defaultReservoirSupplier;
     }
 
@@ -86,7 +88,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
         final Supplier<Reservoir> defaultReservoirSupplier
     ) {
         this.metrics = metrics;
-        this.listeners = new CopyOnWriteArrayList<SemanticMetricRegistryListener>();
+        this.listeners = new CopyOnWriteArrayList<SemanticMetricRegistryListenerV2>();
         this.defaultReservoirSupplier = defaultReservoirSupplier;
     }
 
@@ -134,7 +136,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     /**
      * Given a metric set, registers them.
      *
-     * @param metrics    a set of metrics
+     * @param metrics a set of metrics
      * @throws IllegalArgumentException if any of the names are already registered
      */
     public void registerAll(final SemanticMetricSet metrics) throws IllegalArgumentException {
@@ -162,14 +164,21 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
             SemanticMetricBuilderFactory.histogramWithReservoir(defaultReservoirSupplier));
     }
 
-
-
+    /**
+     * Creates a new {@link Distribution} and registers it under the given name.
+     *
+     * @param name the name of the metric
+     * @return a new {@link Distribution}
+     */
+    public Distribution distribution(final MetricId name) {
+        return getOrAdd(name, SemanticMetricBuilder.DISTRIBUTION);
+    }
 
     /**
      * Creates a new {@link Histogram} with a custom {@link Reservoir} and registers it under
      * the given name.
      *
-     * @param name the name of the metric
+     * @param name              the name of the metric
      * @param reservoirSupplier a {@link Supplier} that returns an instance of {@link Reservoir}
      * @return a new {@link Histogram}
      */
@@ -204,7 +213,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      * Creates a new {@link Timer} with a custom {@link Reservoir} and registers it under the given
      * name.
      *
-     * @param name the name of the metric
+     * @param name              the name of the metric
      * @param reservoirSupplier a {@link Supplier} that returns an instance of {@link Reservoir}
      * @return a new {@link Timer}
      */
@@ -245,7 +254,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     }
 
     /**
-     * Adds a {@link SemanticMetricRegistryListener} to a collection of listeners that will be
+     * Adds a {@link SemanticMetricRegistryListenerV2} to a collection of listeners that will be
      * notified on
      * metric creation.  Listeners will be notified in the order in which they are added.
      * <p/>
@@ -253,7 +262,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      *
      * @param listener the listener that will be notified
      */
-    public void addListener(final SemanticMetricRegistryListener listener) {
+    public void addListener(final SemanticMetricRegistryListenerV2 listener) {
         listeners.add(listener);
 
         for (final Map.Entry<MetricId, Metric> entry : metrics.entrySet()) {
@@ -262,12 +271,12 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     }
 
     /**
-     * Removes a {@link SemanticMetricRegistryListener} from this registry's collection of
+     * Removes a {@link SemanticMetricRegistryListenerV2} from this registry's collection of
      * listeners.
      *
      * @param listener the listener that will be removed
      */
-    public void removeListener(final SemanticMetricRegistryListener listener) {
+    public void removeListener(final SemanticMetricRegistryListenerV2 listener) {
         listeners.remove(listener);
     }
 
@@ -293,7 +302,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     /**
      * Returns a map of all the gauges in the registry and their names which match the given filter.
      *
-     * @param filter    the metric filter to match
+     * @param filter the metric filter to match
      * @return all the gauges in the registry
      */
     @SuppressWarnings("rawtypes")
@@ -314,7 +323,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      * Returns a map of all the counters in the registry and their names which match the given
      * filter.
      *
-     * @param filter    the metric filter to match
+     * @param filter the metric filter to match
      * @return all the counters in the registry
      */
     public SortedMap<MetricId, Counter> getCounters(final SemanticMetricFilter filter) {
@@ -334,7 +343,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      * Returns a map of all the histograms in the registry and their names which match the given
      * filter.
      *
-     * @param filter    the metric filter to match
+     * @param filter the metric filter to match
      * @return all the histograms in the registry
      */
     public SortedMap<MetricId, Histogram> getHistograms(final SemanticMetricFilter filter) {
@@ -353,7 +362,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     /**
      * Returns a map of all the meters in the registry and their names which match the given filter.
      *
-     * @param filter    the metric filter to match
+     * @param filter the metric filter to match
      * @return all the meters in the registry
      */
     public SortedMap<MetricId, Meter> getMeters(final SemanticMetricFilter filter) {
@@ -372,7 +381,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     /**
      * Returns a map of all the timers in the registry and their names which match the given filter.
      *
-     * @param filter    the metric filter to match
+     * @param filter the metric filter to match
      * @return all the timers in the registry
      */
     public SortedMap<MetricId, Timer> getTimers(final SemanticMetricFilter filter) {
@@ -383,7 +392,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      * Returns a map of all the deriving meters in the registry and their names which match the
      * given filter.
      *
-     * @param filter    the metric filter to match
+     * @param filter the metric filter to match
      * @return all the deriving meters in the registry
      */
     public SortedMap<MetricId, DerivingMeter> getDerivingMeters(final SemanticMetricFilter filter) {
@@ -391,15 +400,27 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     }
 
     /**
-     * Atomically adds the given metric to the set of metrics.
+     * Returns a map of all the deriving meters in the registry and their names which match the
+     * given filter.
      *
+     * @param filter the metric filter to match
+     * @return all the deriving meters in the registry
+     */
+    public SortedMap<MetricId, Distribution> getDistribution(final SemanticMetricFilter filter) {
+        return getMetrics(Distribution.class, filter);
+    }
+
+
+    /**
+     * Atomically adds the given metric to the set of metrics.
+     * <p>
      * A side effect of this method is the calling of {@link #onMetricAdded(MetricId, Metric)} if
      * a new
      * metric is added.
-     *
+     * <p>
      * This method should only be used on non-{@code SemanticMetricSet} metrics.
      *
-     * @param name Name of the metric to atomically add if absent.
+     * @param name   Name of the metric to atomically add if absent.
      * @param metric The metric to atomically add if absent.
      * @return {@code null} if the metric was added, or the previously mapped metric.
      */
@@ -473,13 +494,13 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     }
 
     protected void onMetricAdded(final MetricId name, final Metric metric) {
-        for (final SemanticMetricRegistryListener listener : listeners) {
+        for (final SemanticMetricRegistryListenerV2 listener : listeners) {
             notifyListenerOfAddedMetric(listener, metric, name);
         }
     }
 
     private void notifyListenerOfAddedMetric(
-        final SemanticMetricRegistryListener listener, final Metric metric, final MetricId name
+        final SemanticMetricRegistryListenerV2 listener, final Metric metric, final MetricId name
     ) {
         if (metric instanceof Gauge) {
             listener.onGaugeAdded(name, (Gauge<?>) metric);
@@ -493,19 +514,21 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
             listener.onTimerAdded(name, (Timer) metric);
         } else if (metric instanceof DerivingMeter) {
             listener.onDerivingMeterAdded(name, (DerivingMeter) metric);
+        } else if (metric instanceof Distribution) {
+            listener.onDistributionAdded(name, (Distribution) metric);
         } else {
             throw new IllegalArgumentException("Unknown metric type: " + metric.getClass());
         }
     }
 
     protected void onMetricRemoved(final MetricId name, final Metric metric) {
-        for (final SemanticMetricRegistryListener listener : listeners) {
+        for (final SemanticMetricRegistryListenerV2 listener : listeners) {
             notifyListenerOfRemovedMetric(name, metric, listener);
         }
     }
 
     private void notifyListenerOfRemovedMetric(
-        final MetricId name, final Metric metric, final SemanticMetricRegistryListener listener
+        final MetricId name, final Metric metric, final SemanticMetricRegistryListenerV2 listener
     ) {
         if (metric instanceof Gauge) {
             listener.onGaugeRemoved(name);
@@ -519,6 +542,8 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
             listener.onTimerRemoved(name);
         } else if (metric instanceof DerivingMeter) {
             listener.onDerivingMeterRemoved(name);
+        } else if (metric instanceof Distribution) {
+            listener.onDistributionRemoved(name);
         } else {
             throw new IllegalArgumentException("Unknown metric type: " + metric.getClass());
         }

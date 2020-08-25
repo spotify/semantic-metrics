@@ -235,6 +235,7 @@
           <failsOnError>true</failsOnError>
           <maxAllowedViolations>0</maxAllowedViolations>
           <propertyExpansion>basedir=${user.dir}</propertyExpansion>
+          <excludes>**/LockFreeExponentiallyDecayingReservoir.java</excludes>
         </configuration>
         <executions>
           <execution>

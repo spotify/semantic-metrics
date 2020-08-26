@@ -14,7 +14,7 @@ public class SemanticMetricBuilderFactoryTest {
     public void timerWithReservoir() throws Exception {
         final SemanticMetricBuilder<Timer> result =
             SemanticMetricBuilderFactory.timerWithReservoir(() -> {
-                return new ExponentiallyDecayingReservoir();
+                return new LockFreeExponentiallyDecayingReservoir();
             });
         assert Timer.class.isInstance(result.newMetric());
     }
@@ -23,7 +23,7 @@ public class SemanticMetricBuilderFactoryTest {
     public void histogramWithReservoir() throws Exception {
         final SemanticMetricBuilder<Histogram> result =
             SemanticMetricBuilderFactory.histogramWithReservoir(() -> {
-                return new ExponentiallyDecayingReservoir();
+                return new LockFreeExponentiallyDecayingReservoir();
             });
         assert Histogram.class.isInstance(result.newMetric());
     }

@@ -21,7 +21,6 @@
 
 package com.spotify.metrics.core;
 
-import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.Snapshot;
 
@@ -85,11 +84,12 @@ public class ReservoirWithTtl implements Reservoir {
     }
 
     public ReservoirWithTtl() {
-        this(new ExponentiallyDecayingReservoir(), DEFAULT_TTL_SECONDS, DEFAULT_MINIMUM_RATE);
+        this(new LockFreeExponentiallyDecayingReservoir(),
+             DEFAULT_TTL_SECONDS, DEFAULT_MINIMUM_RATE);
     }
 
     public ReservoirWithTtl(final int ttlSeconds) {
-        this(new ExponentiallyDecayingReservoir(), ttlSeconds, DEFAULT_MINIMUM_RATE);
+        this(new LockFreeExponentiallyDecayingReservoir(), ttlSeconds, DEFAULT_MINIMUM_RATE);
     }
 
     public ReservoirWithTtl(final Reservoir delegate, final int ttlSeconds, final int minimumRate) {

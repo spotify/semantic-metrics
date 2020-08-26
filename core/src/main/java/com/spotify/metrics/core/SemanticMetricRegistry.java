@@ -31,7 +31,6 @@
 package com.spotify.metrics.core;
 
 import com.codahale.metrics.Counter;
-import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -63,7 +62,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      * Creates a new {@link SemanticMetricRegistry}.
      */
     public SemanticMetricRegistry(final ConcurrentMap<MetricId, Metric> metrics) {
-        this(metrics, () -> new ExponentiallyDecayingReservoir());
+        this(metrics, () -> new LockFreeExponentiallyDecayingReservoir());
     }
 
     /**
@@ -72,7 +71,8 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     public SemanticMetricRegistry() {
         // This is only for backward compatibility purpose. After removing the "buildMap" method
         // we should call this(new ConcurrentHashMap<MetricId, Metric>()) instead.
-        this(new ConcurrentHashMap<MetricId, Metric>(), () -> new ExponentiallyDecayingReservoir());
+        this(new ConcurrentHashMap<MetricId, Metric>(),
+            () -> new LockFreeExponentiallyDecayingReservoir());
     }
 
     public SemanticMetricRegistry(final Supplier<Reservoir> defaultReservoirSupplier) {

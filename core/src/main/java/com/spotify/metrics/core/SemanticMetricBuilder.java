@@ -22,7 +22,6 @@
 package com.spotify.metrics.core;
 
 import com.codahale.metrics.Counter;
-import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
@@ -45,7 +44,7 @@ public interface SemanticMetricBuilder<T extends Metric> {
     };
 
     SemanticMetricBuilder<Histogram> HISTOGRAMS = SemanticMetricBuilderFactory
-        .histogramWithReservoir(() -> new ExponentiallyDecayingReservoir());
+        .histogramWithReservoir(() -> new LockFreeExponentiallyDecayingReservoir());
 
     SemanticMetricBuilder<Meter> METERS = new SemanticMetricBuilder<Meter>() {
         @Override
@@ -60,7 +59,7 @@ public interface SemanticMetricBuilder<T extends Metric> {
     };
 
     SemanticMetricBuilder<Timer> TIMERS = SemanticMetricBuilderFactory
-        .timerWithReservoir(() -> new ExponentiallyDecayingReservoir());
+        .timerWithReservoir(() -> new LockFreeExponentiallyDecayingReservoir());
 
     SemanticMetricBuilder<DerivingMeter> DERIVING_METERS =
         new SemanticMetricBuilder<DerivingMeter>() {

@@ -58,7 +58,7 @@ import java.util.function.Supplier;
  */
 public class SemanticMetricRegistry implements SemanticMetricSet {
     private final ConcurrentMap<MetricId, Metric> metrics;
-    private final List<SemanticMetricRegistryListenerV2> listeners;
+    private final List<SemanticMetricRegistryListener> listeners;
     private final Supplier<Reservoir> defaultReservoirSupplier;
 
     /**
@@ -79,7 +79,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
 
     public SemanticMetricRegistry(final Supplier<Reservoir> defaultReservoirSupplier) {
         this.metrics = new ConcurrentHashMap<MetricId, Metric>();
-        this.listeners = new CopyOnWriteArrayList<SemanticMetricRegistryListenerV2>();
+        this.listeners = new CopyOnWriteArrayList<>();
         this.defaultReservoirSupplier = defaultReservoirSupplier;
     }
 
@@ -88,7 +88,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
         final Supplier<Reservoir> defaultReservoirSupplier
     ) {
         this.metrics = metrics;
-        this.listeners = new CopyOnWriteArrayList<SemanticMetricRegistryListenerV2>();
+        this.listeners = new CopyOnWriteArrayList<>();
         this.defaultReservoirSupplier = defaultReservoirSupplier;
     }
 
@@ -254,7 +254,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     }
 
     /**
-     * Adds a {@link SemanticMetricRegistryListenerV2} to a collection of listeners that will be
+     * Adds a {@link SemanticMetricRegistryListener} to a collection of listeners that will be
      * notified on
      * metric creation.  Listeners will be notified in the order in which they are added.
      * <p/>
@@ -262,7 +262,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      *
      * @param listener the listener that will be notified
      */
-    public void addListener(final SemanticMetricRegistryListenerV2 listener) {
+    public void addListener(final SemanticMetricRegistryListener listener) {
         listeners.add(listener);
 
         for (final Map.Entry<MetricId, Metric> entry : metrics.entrySet()) {
@@ -271,12 +271,12 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     }
 
     /**
-     * Removes a {@link SemanticMetricRegistryListenerV2} from this registry's collection of
+     * Removes a {@link SemanticMetricRegistryListener} from this registry's collection of
      * listeners.
      *
      * @param listener the listener that will be removed
      */
-    public void removeListener(final SemanticMetricRegistryListenerV2 listener) {
+    public void removeListener(final SemanticMetricRegistryListener listener) {
         listeners.remove(listener);
     }
 
@@ -494,13 +494,13 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
     }
 
     protected void onMetricAdded(final MetricId name, final Metric metric) {
-        for (final SemanticMetricRegistryListenerV2 listener : listeners) {
+        for (final SemanticMetricRegistryListener listener : listeners) {
             notifyListenerOfAddedMetric(listener, metric, name);
         }
     }
 
     private void notifyListenerOfAddedMetric(
-        final SemanticMetricRegistryListenerV2 listener, final Metric metric, final MetricId name
+        final SemanticMetricRegistryListener listener, final Metric metric, final MetricId name
     ) {
         if (metric instanceof Gauge) {
             listener.onGaugeAdded(name, (Gauge<?>) metric);
@@ -521,14 +521,15 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
         }
     }
 
+
     protected void onMetricRemoved(final MetricId name, final Metric metric) {
-        for (final SemanticMetricRegistryListenerV2 listener : listeners) {
+        for (final SemanticMetricRegistryListener listener : listeners) {
             notifyListenerOfRemovedMetric(name, metric, listener);
         }
     }
 
     private void notifyListenerOfRemovedMetric(
-        final MetricId name, final Metric metric, final SemanticMetricRegistryListenerV2 listener
+        final MetricId name, final Metric metric, final SemanticMetricRegistryListener listener
     ) {
         if (metric instanceof Gauge) {
             listener.onGaugeRemoved(name);

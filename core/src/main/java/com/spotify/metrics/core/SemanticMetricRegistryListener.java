@@ -35,6 +35,7 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
+import com.spotify.metrics.core.codahale.metrics.ext.Distribution;
 
 import java.util.EventListener;
 
@@ -42,59 +43,6 @@ import java.util.EventListener;
  * Listeners for events from the registry.  Listeners must be thread-safe.
  */
 public interface SemanticMetricRegistryListener extends EventListener {
-    /**
-     * A no-op implementation of {@link SemanticMetricRegistryListener}.
-     */
-    abstract class Base implements SemanticMetricRegistryListener {
-        @Override
-        public void onGaugeAdded(MetricId name, Gauge<?> gauge) {
-        }
-
-        @Override
-        public void onGaugeRemoved(MetricId name) {
-        }
-
-        @Override
-        public void onCounterAdded(MetricId name, Counter counter) {
-        }
-
-        @Override
-        public void onCounterRemoved(MetricId name) {
-        }
-
-        @Override
-        public void onHistogramAdded(MetricId name, Histogram histogram) {
-        }
-
-        @Override
-        public void onHistogramRemoved(MetricId name) {
-        }
-
-        @Override
-        public void onMeterAdded(MetricId name, Meter meter) {
-        }
-
-        @Override
-        public void onMeterRemoved(MetricId name) {
-        }
-
-        @Override
-        public void onTimerAdded(MetricId name, Timer timer) {
-        }
-
-        @Override
-        public void onTimerRemoved(MetricId name) {
-        }
-
-        @Override
-        public void onDerivingMeterAdded(MetricId name, DerivingMeter derivingMeter) {
-        }
-
-        @Override
-        public void onDerivingMeterRemoved(MetricId name) {
-        }
-    }
-
     /**
      * Called when a {@link Gauge} is added to the registry.
      *
@@ -173,7 +121,7 @@ public interface SemanticMetricRegistryListener extends EventListener {
     /**
      * Called when a {@link DerivingMeter} is added to the registry.
      *
-     * @param name  the meter's name
+     * @param name          the meter's name
      * @param derivingMeter the meter
      */
     void onDerivingMeterAdded(MetricId name, DerivingMeter derivingMeter);
@@ -184,4 +132,91 @@ public interface SemanticMetricRegistryListener extends EventListener {
      * @param name the meter's name
      */
     void onDerivingMeterRemoved(MetricId name);
+
+    /**
+     * This is a no op implementation for backward compatibility.
+     * Please override this method if you are using a Distribution metric.
+     * Method is called when a {@link Distribution}  is added to the registry.
+     *
+     * @param name         the distribution's name
+     * @param distribution the distribution
+     */
+    public default void onDistributionAdded(MetricId name, Distribution distribution) {
+
+    }
+
+    /**
+     * This is a no op implementation for backward compatibility.
+     * Please override this method if you are using a Distribution metric.
+     * Method is called when a {@link Distribution}  is removed from the registry.
+     *
+     * @param name the distribution's name
+     */
+    public default void onDistributionRemoved(MetricId name) {
+
+    }
+
+    /**
+     * A no-op implementation of {@link SemanticMetricRegistryListener}.
+     */
+    abstract class Base implements SemanticMetricRegistryListener {
+        @Override
+        public void onGaugeAdded(MetricId name, Gauge<?> gauge) {
+        }
+
+        @Override
+        public void onGaugeRemoved(MetricId name) {
+        }
+
+        @Override
+        public void onCounterAdded(MetricId name, Counter counter) {
+        }
+
+        @Override
+        public void onCounterRemoved(MetricId name) {
+        }
+
+        @Override
+        public void onHistogramAdded(MetricId name, Histogram histogram) {
+        }
+
+        @Override
+        public void onHistogramRemoved(MetricId name) {
+        }
+
+        @Override
+        public void onMeterAdded(MetricId name, Meter meter) {
+        }
+
+        @Override
+        public void onMeterRemoved(MetricId name) {
+        }
+
+        @Override
+        public void onTimerAdded(MetricId name, Timer timer) {
+        }
+
+        @Override
+        public void onTimerRemoved(MetricId name) {
+        }
+
+        @Override
+        public void onDerivingMeterAdded(MetricId name, DerivingMeter derivingMeter) {
+        }
+
+        @Override
+        public void onDerivingMeterRemoved(MetricId name) {
+        }
+
+        @Override
+        public void onDistributionAdded(MetricId name, Distribution distribution) {
+
+        }
+
+        @Override
+        public  void onDistributionRemoved(MetricId name) {
+
+        }
+    }
+
 }

@@ -26,19 +26,32 @@ import com.codahale.metrics.Metric;
 
 import java.nio.ByteBuffer;
 
-
+/**
+ * {@link Distribution} is a simple interface that allows users to record measurements
+ * to compute rank statistics on data distribution not just local source.
+ *
+ * <p>Unlike traditional histogram, {@link Distribution} doesn't require
+ * predefined percentile value. Data recorded
+ * can be used upstream to compute any percentile.
+ *
+ * <p>This Distribution doesn't require any binning configuration.
+ * Just get an instance through SemanticMetricBuilder and record data.
+ *
+ * <p> {@link Distribution} is a good choice if you care about percentile accuracy in
+ * a distributed environment and you want to rely on P99 to set SLO.
+ */
 public interface Distribution extends Metric, Counting {
 
     /**
      * Record value from Min.Double to Max.Double.
-     *
      * @param val
      */
     void record(double val);
 
     /**
-     * Return serialized distribution and flush.
-     *
+     * Return distribution point value and flush.
+     * When this method is called every internal state
+     * is reset and a new recording starts.
      * @return
      */
     ByteBuffer getValueAndFlush();

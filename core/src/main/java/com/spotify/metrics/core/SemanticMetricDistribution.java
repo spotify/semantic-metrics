@@ -29,47 +29,48 @@ import com.tdunning.math.stats.TDigest;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
-
-public class DistributionImpl implements Distribution {
+/**
+ * Semantic Metric implementation of {@link Distribution}.
+ * This implementation ensures threadsafety for recording  data
+ * and retrieving distribution point value.
+ */
+public final class SemanticMetricDistribution implements Distribution {
 
     private static final int COMPRESSION_DEFAULT_LEVEL = 100;
     private final AtomicReference<TDigest> distRef;
 
-    protected DistributionImpl() {
-        this.distRef = new AtomicReference<>(TDigest.createDigest(COMPRESSION_DEFAULT_LEVEL));
+    SemanticMetricDistribution() {
+        this.distRef = new AtomicReference<>(create());
     }
 
     @Override
-    public void record(double val) {
+    public synchronized void record(double val) {
         distRef.get().add(val);
     }
 
     @Override
     public java.nio.ByteBuffer getValueAndFlush() {
-        TDigest curVal = distRef.getAndSet(create()); // reset tdigest
+        TDigest curVal;
+        synchronized (this) {
+            curVal = distRef.getAndSet(create()); // reset tdigest
+        }
         ByteBuffer byteBuffer = ByteBuffer.allocate(curVal.smallByteSize());
         curVal.asSmallBytes(byteBuffer);
         return byteBuffer;
     }
 
-    /**
-     * Returns the current count.
-     *
-     * @return the current count
-     */
+
     @Override
     public long getCount() {
-        return this.tDigest().size();
+        return distRef.get().size();
     }
-
-    private TDigest create() {
-        return TDigest.createDigest(COMPRESSION_DEFAULT_LEVEL);
-    }
-
 
     @VisibleForTesting
     TDigest tDigest() {
         return distRef.get();
     }
 
+    private TDigest create() {
+        return TDigest.createDigest(COMPRESSION_DEFAULT_LEVEL);
+    }
 }

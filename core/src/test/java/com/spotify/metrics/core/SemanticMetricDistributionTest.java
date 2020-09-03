@@ -9,16 +9,16 @@ import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
-public class DistributionImplTest {
+public class SemanticMetricDistributionTest {
 
     private double [] period1Data = {1.34, 1.56, 1,58};
     private double [] period2Data  ={1.32, 1.57, 1.55, 0.456, 1,467, 2.45};
 
-    private DistributionImpl distribution;
+    private SemanticMetricDistribution distribution;
 
     @Before
     public void setup(){
-        distribution = new DistributionImpl();
+        distribution = new SemanticMetricDistribution();
     }
 
     @Test

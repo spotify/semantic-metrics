@@ -19,7 +19,7 @@
  * under the License.
  */
 
-package com.spotify.metrics.core.codahale.metrics.ext;
+package com.spotify.metrics.core;
 
 import com.codahale.metrics.Counting;
 import com.codahale.metrics.Metric;

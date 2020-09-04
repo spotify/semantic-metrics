@@ -1,6 +1,5 @@
 package com.spotify.metrics.core;
 
-import com.spotify.metrics.core.codahale.metrics.ext.Distribution;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertTrue;

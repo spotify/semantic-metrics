@@ -38,7 +38,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.Timer;
-import com.spotify.metrics.core.codahale.metrics.ext.Distribution;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.util.Collections;
@@ -406,7 +405,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      * @param filter the metric filter to match
      * @return a sorted Map of distribution metrics
      */
-    public SortedMap<MetricId, Distribution> getDistribution(final SemanticMetricFilter filter) {
+    public SortedMap<MetricId, Distribution> getDistributions(final SemanticMetricFilter filter) {
         return getMetrics(Distribution.class, filter);
     }
 

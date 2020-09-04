@@ -37,7 +37,7 @@ import com.spotify.metrics.core.DerivingMeter;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricFilter;
 import com.spotify.metrics.core.SemanticMetricRegistry;
-import com.spotify.metrics.core.codahale.metrics.ext.Distribution;
+import com.spotify.metrics.core.Distribution;
 import com.spotify.metrics.tags.NoopTagExtractor;
 import com.spotify.metrics.tags.TagExtractor;
 import org.slf4j.Logger;
@@ -117,7 +117,7 @@ public class FastForwardReporter implements AutoCloseable {
         report(registry.getGauges(FILTER_ALL), registry.getCounters(FILTER_ALL),
             registry.getHistograms(FILTER_ALL), registry.getMeters(FILTER_ALL),
             registry.getTimers(FILTER_ALL), registry.getDerivingMeters(FILTER_ALL),
-            registry.getDistribution(FILTER_ALL));
+            registry.getDistributions(FILTER_ALL));
     }
 
     private void report(

@@ -23,7 +23,6 @@ package com.spotify.metrics.core;
 
 
 import com.google.common.annotations.VisibleForTesting;
-import com.spotify.metrics.core.codahale.metrics.ext.Distribution;
 import com.tdunning.math.stats.TDigest;
 
 import java.nio.ByteBuffer;

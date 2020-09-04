@@ -34,15 +34,12 @@ import com.spotify.ffwd.FastForward;
 import com.spotify.ffwd.Metric;
 import com.spotify.ffwd.v1.Value;
 import com.spotify.metrics.core.DerivingMeter;
+import com.spotify.metrics.core.Distribution;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricFilter;
 import com.spotify.metrics.core.SemanticMetricRegistry;
-import com.spotify.metrics.core.Distribution;
 import com.spotify.metrics.tags.NoopTagExtractor;
 import com.spotify.metrics.tags.TagExtractor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
@@ -56,6 +53,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FastForwardReporter implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(FastForwardReporter.class);
@@ -111,6 +110,103 @@ public class FastForwardReporter implements AutoCloseable {
 
     public static Builder forRegistry(SemanticMetricRegistry registry) {
         return new Builder(registry);
+    }
+
+    public static final class Builder {
+        private final SemanticMetricRegistry registry;
+        private TimeUnit unit = TimeUnit.MINUTES;
+        private long time = 5;
+        private String host = FastForward.DEFAULT_HOST;
+        private int port = FastForward.DEFAULT_PORT;
+        private MetricId prefix = MetricId.build();
+        private FastForward client = null;
+        private TagExtractor tagExtractor;
+        private ScheduledExecutorService executorService;
+
+        private Set<Percentile> histogramPercentiles =
+            Sets.newHashSet(new Percentile(0.75), new Percentile(0.99));
+
+        public Builder(SemanticMetricRegistry registry) {
+            this.registry = registry;
+        }
+
+        public Builder host(String host) {
+            this.host = host;
+            return this;
+        }
+
+        public Builder port(int port) {
+            this.port = port;
+            return this;
+        }
+
+        public Builder schedule(TimeUnit unit, long time) {
+            this.unit = unit;
+            this.time = time;
+            return this;
+        }
+
+        public Builder prefix(String prefix) {
+            this.prefix = MetricId.build(prefix);
+            return this;
+        }
+
+        public Builder prefix(MetricId prefix) {
+            this.prefix = prefix;
+            return this;
+        }
+
+        public Builder fastForward(FastForward client) {
+            this.client = client;
+            return this;
+        }
+
+        public Builder tagExtractor(TagExtractor tagExtractor) {
+            this.tagExtractor = tagExtractor;
+            return this;
+        }
+
+        public Builder executorService(ScheduledExecutorService executorService) {
+            this.executorService = executorService;
+            return this;
+        }
+
+        /**
+         * Set which quantiles should be reported as percentiles by this reporter. Calling this
+         * method overrides the default percentiles (p75, p99).
+         *
+         * @param quantiles values in range [0..1] that represent percentiles to be reported from
+         * histograms, e.g., 0.75 means p75 should be reported
+         */
+        public Builder histogramQuantiles(double... quantiles) {
+            histogramPercentiles = new HashSet<>();
+            for (double q : quantiles) {
+                histogramPercentiles.add(new Percentile(q));
+            }
+            return this;
+        }
+
+        public FastForwardReporter build() throws IOException {
+            final FastForward client =
+                this.client != null ? this.client : FastForward.setup(host, port);
+            final TagExtractor tagExtractor =
+                this.tagExtractor != null ? this.tagExtractor : new NoopTagExtractor();
+            final boolean executorOwner;
+            final ScheduledExecutorService executorService;
+            if (this.executorService != null) {
+                executorService = this.executorService;
+                executorOwner = false;
+            } else {
+                executorService = createExecutor();
+                executorOwner = true;
+            }
+            return new FastForwardReporter(registry, prefix, unit, time, client,
+                histogramPercentiles, tagExtractor, executorService, executorOwner);
+        }
+
+        private ScheduledExecutorService createExecutor() {
+            return Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
+        }
     }
 
     public void report() {
@@ -262,18 +358,18 @@ public class FastForwardReporter implements AutoCloseable {
         }
     }
 
-    private void reportDistribution(final com.spotify.ffwd.v1.Metric metric,
-                                    final Distribution distribution) {
-        ByteBuffer byteBuffer = distribution.getValueAndFlush();
-        Value value = Value.distributionValue(byteBuffer);
-        send(metric.value(value));
-    }
-
     private void reportMetered(final Metric m, Metered value) {
         final String u = getUnit(m);
         final Metric r = m.attribute("unit", u + "/s");
         send(r.attribute("stat", "1m").value(value.getOneMinuteRate()));
         send(r.attribute("stat", "5m").value(value.getFiveMinuteRate()));
+    }
+
+    private void reportDistribution(final com.spotify.ffwd.v1.Metric metric,
+                                    final Distribution distribution) {
+        ByteBuffer byteBuffer = distribution.getValueAndFlush();
+        Value value = Value.distributionValue(byteBuffer);
+        send(metric.value(value));
     }
 
     private String getUnit(final Metric m) {
@@ -337,102 +433,5 @@ public class FastForwardReporter implements AutoCloseable {
     @Override
     public void close() {
         stop();
-    }
-
-    public static final class Builder {
-        private final SemanticMetricRegistry registry;
-        private TimeUnit unit = TimeUnit.MINUTES;
-        private long time = 5;
-        private String host = FastForward.DEFAULT_HOST;
-        private int port = FastForward.DEFAULT_PORT;
-        private MetricId prefix = MetricId.build();
-        private FastForward client = null;
-        private TagExtractor tagExtractor;
-        private ScheduledExecutorService executorService;
-
-        private Set<Percentile> histogramPercentiles =
-            Sets.newHashSet(new Percentile(0.75), new Percentile(0.99));
-
-        public Builder(SemanticMetricRegistry registry) {
-            this.registry = registry;
-        }
-
-        public Builder host(String host) {
-            this.host = host;
-            return this;
-        }
-
-        public Builder port(int port) {
-            this.port = port;
-            return this;
-        }
-
-        public Builder schedule(TimeUnit unit, long time) {
-            this.unit = unit;
-            this.time = time;
-            return this;
-        }
-
-        public Builder prefix(String prefix) {
-            this.prefix = MetricId.build(prefix);
-            return this;
-        }
-
-        public Builder prefix(MetricId prefix) {
-            this.prefix = prefix;
-            return this;
-        }
-
-        public Builder fastForward(FastForward client) {
-            this.client = client;
-            return this;
-        }
-
-        public Builder tagExtractor(TagExtractor tagExtractor) {
-            this.tagExtractor = tagExtractor;
-            return this;
-        }
-
-        public Builder executorService(ScheduledExecutorService executorService) {
-            this.executorService = executorService;
-            return this;
-        }
-
-        /**
-         * Set which quantiles should be reported as percentiles by this reporter. Calling this
-         * method overrides the default percentiles (p75, p99).
-         *
-         * @param quantiles values in range [0..1] that represent percentiles to be reported from
-         *                  histograms, e.g., 0.75 means p75 should be reported
-         */
-        public Builder histogramQuantiles(double... quantiles) {
-            histogramPercentiles = new HashSet<>();
-            for (double q : quantiles) {
-                histogramPercentiles.add(new Percentile(q));
-            }
-            return this;
-        }
-
-        public FastForwardReporter build() throws IOException {
-            final FastForward client =
-                this.client != null ? this.client : FastForward.setup(host, port);
-            final TagExtractor tagExtractor =
-                this.tagExtractor != null ? this.tagExtractor : new NoopTagExtractor();
-            final boolean executorOwner;
-            final ScheduledExecutorService executorService;
-            if (this.executorService != null) {
-                executorService = this.executorService;
-                executorOwner = false;
-            } else {
-                executorService = createExecutor();
-                executorOwner = true;
-            }
-            return new FastForwardReporter(registry, prefix, unit, time, client,
-                histogramPercentiles, tagExtractor, executorService, executorOwner);
-        }
-
-        private ScheduledExecutorService createExecutor() {
-            return Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
-        }
     }
 }

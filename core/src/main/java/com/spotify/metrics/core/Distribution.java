@@ -30,6 +30,12 @@ import java.nio.ByteBuffer;
  * {@link Distribution} is a simple interface that allows users to record measurements
  * to compute rank statistics on data distribution not just local source.
  *
+ * <p>Every implementation should produce a serialized data sketch in a byteBuffer
+ * as this metric point value. For more information on how this is handled upstream,
+ * Please refer to
+ * <a href="https://github.com/spotify/ffwd-client-java/blob/master/ffwd-
+ *  client/src/main/java/com/spotify/ffwd/FastForward.java#L110"/> FastForward Java client</a>
+ *
  * <p>Unlike traditional histogram, {@link Distribution} doesn't require
  * predefined percentile value. Data recorded
  * can be used upstream to compute any percentile.
@@ -52,6 +58,7 @@ public interface Distribution extends Metric, Counting {
      * Return distribution point value and flush.
      * When this method is called every internal state
      * is reset and a new recording starts.
+     *
      * @return
      */
     ByteBuffer getValueAndFlush();

@@ -132,7 +132,19 @@ public class SemanticMetricRegistryTest {
     }
 
     @Test
-    public void testGetOrAddAlreadyExists() {
+    public void shouldGetDistribution() throws Exception {
+        final SemanticMetricFilter filter = mock(SemanticMetricFilter.class);
+        final SortedMap<MetricId, Distribution> result = mock(SortedMap.class);
+
+        doReturn(result).when(registry).getMetrics(Distribution.class, filter);
+
+        assertEquals(result, registry.getDistributions(filter));
+
+        verify(registry).getMetrics(Distribution.class, filter);
+    }
+
+    @Test
+    public void testGetOrAddAlreadyExists() throws Exception {
         SemanticMetricBuilder<Metric> builder = mock(SemanticMetricBuilder.class);
         doReturn(metric).when(metrics).get(id);
         doReturn(true).when(builder).isInstance(metric);

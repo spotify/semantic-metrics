@@ -32,13 +32,16 @@ import com.codahale.metrics.Timer;
 import com.google.common.collect.Sets;
 import com.spotify.ffwd.FastForward;
 import com.spotify.ffwd.Metric;
+import com.spotify.ffwd.v1.Value;
 import com.spotify.metrics.core.DerivingMeter;
+import com.spotify.metrics.core.Distribution;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricFilter;
 import com.spotify.metrics.core.SemanticMetricRegistry;
 import com.spotify.metrics.tags.NoopTagExtractor;
 import com.spotify.metrics.tags.TagExtractor;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -90,10 +93,10 @@ public class FastForwardReporter implements AutoCloseable {
     private ScheduledFuture<?> scheduledFuture;
 
     private FastForwardReporter(
-            SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
-            FastForward client, Set<Percentile> histogramPercentiles, TagExtractor tagExtractor,
-            ScheduledExecutorService executorService,
-            boolean executorOwner) {
+        SemanticMetricRegistry registry, MetricId prefix, TimeUnit unit, long duration,
+        FastForward client, Set<Percentile> histogramPercentiles, TagExtractor tagExtractor,
+        ScheduledExecutorService executorService,
+        boolean executorOwner) {
         this.registry = registry;
         this.prefix = prefix;
         this.unit = unit;
@@ -209,14 +212,16 @@ public class FastForwardReporter implements AutoCloseable {
     public void report() {
         report(registry.getGauges(FILTER_ALL), registry.getCounters(FILTER_ALL),
             registry.getHistograms(FILTER_ALL), registry.getMeters(FILTER_ALL),
-            registry.getTimers(FILTER_ALL), registry.getDerivingMeters(FILTER_ALL));
+            registry.getTimers(FILTER_ALL), registry.getDerivingMeters(FILTER_ALL),
+            registry.getDistributions(FILTER_ALL));
     }
 
     private void report(
         @SuppressWarnings("rawtypes") SortedMap<MetricId, Gauge> gauges,
         SortedMap<MetricId, Counter> counters, SortedMap<MetricId, Histogram> histograms,
         SortedMap<MetricId, Meter> meters, SortedMap<MetricId, Timer> timers,
-        SortedMap<MetricId, DerivingMeter> derivingMeters
+        SortedMap<MetricId, DerivingMeter> derivingMeters,
+        SortedMap<MetricId, Distribution> distributions
     ) {
         for (@SuppressWarnings("rawtypes") Map.Entry<MetricId, Gauge> entry : gauges.entrySet()) {
             reportGauge(entry.getKey(), entry.getValue());
@@ -240,6 +245,10 @@ public class FastForwardReporter implements AutoCloseable {
 
         for (Map.Entry<MetricId, DerivingMeter> entry : derivingMeters.entrySet()) {
             reportDerivingMeter(entry.getKey(), entry.getValue());
+        }
+
+        for (Map.Entry<MetricId, Distribution> entry : distributions.entrySet()) {
+            reportDistribution(entry.getKey(), entry.getValue());
         }
     }
 
@@ -323,6 +332,17 @@ public class FastForwardReporter implements AutoCloseable {
         reportMetered(m, value);
     }
 
+    private void reportDistribution(MetricId key, Distribution distribution) {
+        key = MetricId.join(prefix, key);
+
+        final com.spotify.ffwd.v1.Metric metric = FastForward
+            .metricV1(key.getKey())
+            .attributes(key.getTags())
+            .attribute(METRIC_TYPE, "distribution");
+
+        reportDistribution(metric, distribution);
+    }
+
     private void reportHistogram(final Metric m, final Snapshot s) {
         send(m.attribute("stat", "min").value(s.getMin()));
         send(m.attribute("stat", "max").value(s.getMax()));
@@ -345,6 +365,13 @@ public class FastForwardReporter implements AutoCloseable {
         send(r.attribute("stat", "5m").value(value.getFiveMinuteRate()));
     }
 
+    private void reportDistribution(final com.spotify.ffwd.v1.Metric metric,
+                                    final Distribution distribution) {
+        ByteBuffer byteBuffer = distribution.getValueAndFlush();
+        Value value = Value.distributionValue(byteBuffer);
+        send(metric.value(value));
+    }
+
     private String getUnit(final Metric m) {
         final String unit = m.getAttributes().get("unit");
 
@@ -358,6 +385,17 @@ public class FastForwardReporter implements AutoCloseable {
     private void send(Metric metric) {
         final Map<String, String> tags = tagExtractor.addTags(metric.getAttributes());
         final Metric taggedMetric = metric.attributes(tags);
+
+        try {
+            client.send(taggedMetric);
+        } catch (IOException e) {
+            log.error("Failed to send metric", e);
+        }
+    }
+
+    private void send(com.spotify.ffwd.v1.Metric metric) {
+        final Map<String, String> tags = tagExtractor.addTags(metric.getAttributes());
+        final com.spotify.ffwd.v1.Metric taggedMetric = metric.attributes(tags);
 
         try {
             client.send(taggedMetric);

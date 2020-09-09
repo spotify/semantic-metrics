@@ -31,6 +31,19 @@ import com.codahale.metrics.Timer;
  * A quick and easy way of capturing the notion of default metrics.
  */
 public interface SemanticMetricBuilder<T extends Metric> {
+
+    SemanticMetricBuilder<Distribution> DISTRIBUTION = new SemanticMetricBuilder<Distribution>() {
+        @Override
+        public Distribution newMetric() {
+            return new SemanticMetricDistribution();
+        }
+
+        @Override
+        public boolean isInstance(final Metric metric) {
+            return Distribution.class.isInstance(metric);
+        }
+    };
+
     SemanticMetricBuilder<Counter> COUNTERS = new SemanticMetricBuilder<Counter>() {
         @Override
         public Counter newMetric() {

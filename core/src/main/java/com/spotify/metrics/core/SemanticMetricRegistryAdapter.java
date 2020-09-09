@@ -107,6 +107,7 @@ public class SemanticMetricRegistryAdapter implements MetricRegistryListener {
         tryRemove(name);
     }
 
+
     private <T extends Metric> void tryRegister(String name, T metric) {
         try {
             MetricId metricId = metricIdBuilder.buildMetricId(name);

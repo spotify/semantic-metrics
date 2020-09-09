@@ -93,6 +93,16 @@ public interface SemanticMetricRegistryListener extends EventListener {
         @Override
         public void onDerivingMeterRemoved(MetricId name) {
         }
+
+        @Override
+        public void onDistributionAdded(MetricId name, Distribution distribution) {
+
+        }
+
+        @Override
+        public  void onDistributionRemoved(MetricId name) {
+
+        }
     }
 
     /**
@@ -184,4 +194,27 @@ public interface SemanticMetricRegistryListener extends EventListener {
      * @param name the meter's name
      */
     void onDerivingMeterRemoved(MetricId name);
+
+    /**
+     * This is a no op implementation for backward compatibility.
+     * Please override this method if you are using a Distribution metric.
+     * Method is called when a {@link Distribution}  is added to the registry.
+     *
+     * @param name         the distribution's name
+     * @param distribution the distribution
+     */
+    public default void onDistributionAdded(MetricId name, Distribution distribution) {
+
+    }
+
+    /**
+     * This is a no op implementation for backward compatibility.
+     * Please override this method if you are using a Distribution metric.
+     * Method is called when a {@link Distribution}  is removed from the registry.
+     *
+     * @param name the distribution's name
+     */
+    public default void onDistributionRemoved(MetricId name) {
+
+    }
 }

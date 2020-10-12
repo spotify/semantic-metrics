@@ -57,7 +57,7 @@ public interface SemanticMetricBuilder<T extends Metric> {
     };
 
     SemanticMetricBuilder<Histogram> HISTOGRAMS = SemanticMetricBuilderFactory
-        .histogramWithReservoir(() -> new LockFreeExponentiallyDecayingReservoir());
+        .histogramWithReservoir(() -> LockFreeExponentiallyDecayingReservoir.builder().build());
 
     SemanticMetricBuilder<Meter> METERS = new SemanticMetricBuilder<Meter>() {
         @Override
@@ -72,7 +72,7 @@ public interface SemanticMetricBuilder<T extends Metric> {
     };
 
     SemanticMetricBuilder<Timer> TIMERS = SemanticMetricBuilderFactory
-        .timerWithReservoir(() -> new LockFreeExponentiallyDecayingReservoir());
+        .timerWithReservoir(() -> LockFreeExponentiallyDecayingReservoir.builder().build());
 
     SemanticMetricBuilder<DerivingMeter> DERIVING_METERS =
         new SemanticMetricBuilder<DerivingMeter>() {

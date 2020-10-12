@@ -63,7 +63,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
      * Creates a new {@link SemanticMetricRegistry}.
      */
     public SemanticMetricRegistry(final ConcurrentMap<MetricId, Metric> metrics) {
-        this(metrics, () -> new LockFreeExponentiallyDecayingReservoir());
+        this(metrics, () -> LockFreeExponentiallyDecayingReservoir.builder().build());
     }
 
     /**
@@ -73,7 +73,7 @@ public class SemanticMetricRegistry implements SemanticMetricSet {
         // This is only for backward compatibility purpose. After removing the "buildMap" method
         // we should call this(new ConcurrentHashMap<MetricId, Metric>()) instead.
         this(new ConcurrentHashMap<MetricId, Metric>(),
-            () -> new LockFreeExponentiallyDecayingReservoir());
+            () -> LockFreeExponentiallyDecayingReservoir.builder().build());
     }
 
     public SemanticMetricRegistry(final Supplier<Reservoir> defaultReservoirSupplier) {

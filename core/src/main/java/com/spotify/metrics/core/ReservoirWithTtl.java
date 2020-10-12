@@ -84,12 +84,13 @@ public class ReservoirWithTtl implements Reservoir {
     }
 
     public ReservoirWithTtl() {
-        this(new LockFreeExponentiallyDecayingReservoir(),
+        this(LockFreeExponentiallyDecayingReservoir.builder().build(),
              DEFAULT_TTL_SECONDS, DEFAULT_MINIMUM_RATE);
     }
 
     public ReservoirWithTtl(final int ttlSeconds) {
-        this(new LockFreeExponentiallyDecayingReservoir(), ttlSeconds, DEFAULT_MINIMUM_RATE);
+        this(LockFreeExponentiallyDecayingReservoir.builder().build(),
+             ttlSeconds, DEFAULT_MINIMUM_RATE);
     }
 
     public ReservoirWithTtl(final Reservoir delegate, final int ttlSeconds, final int minimumRate) {

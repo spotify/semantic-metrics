@@ -173,7 +173,7 @@ class LockFreeExponentiallyDecayingReservoir implements Reservoir {
             final double scalingFactor = exp(-alpha * (startTime - previous.startTime));
 
             final ConcurrentSkipListMap<Double, WeightedSample> oldValues = previous.values.getAndSet(new ConcurrentSkipListMap<>());
-            previous.count.addAndGet(-oldValues.size());
+            previous.count.set(0);
 
             if (Double.compare(scalingFactor, 0) == 0) {
                 return;

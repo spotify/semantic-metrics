@@ -53,6 +53,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <metrics.version>4.0.2</metrics.version>
     <tdunning.tdigest.version>3.2</tdunning.tdigest.version>
+    <com.google.protobuf.version>3.11.1</com.google.protobuf.version>
     <maven.compiler.release>8</maven.compiler.release>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
@@ -106,7 +107,11 @@
         <artifactId>guava</artifactId>
         <version>26.0-jre</version>
       </dependency>
-
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${com.google.protobuf.version}</version>
+      </dependency>
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>

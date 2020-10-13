@@ -47,6 +47,12 @@
         <artifactId>guava</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+    </dependency>
+
+
       <!-- testing -->
     <dependency>
       <groupId>junit</groupId>

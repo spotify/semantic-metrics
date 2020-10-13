@@ -30,6 +30,7 @@ import com.codahale.metrics.Metered;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.Sets;
+import com.google.protobuf.ByteString;
 import com.spotify.ffwd.FastForward;
 import com.spotify.ffwd.Metric;
 import com.spotify.ffwd.v1.Value;
@@ -41,7 +42,6 @@ import com.spotify.metrics.core.SemanticMetricRegistry;
 import com.spotify.metrics.tags.NoopTagExtractor;
 import com.spotify.metrics.tags.TagExtractor;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -367,8 +367,8 @@ public class FastForwardReporter implements AutoCloseable {
 
     private void reportDistribution(final com.spotify.ffwd.v1.Metric metric,
                                     final Distribution distribution) {
-        ByteBuffer byteBuffer = distribution.getValueAndFlush();
-        Value value = Value.distributionValue(byteBuffer);
+        ByteString byteString = distribution.getValueAndFlush();
+        Value value = Value.distributionValue(byteString);
         send(metric.value(value));
     }
 

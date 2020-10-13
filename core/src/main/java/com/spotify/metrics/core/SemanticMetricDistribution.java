@@ -23,6 +23,7 @@ package com.spotify.metrics.core;
 
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.protobuf.ByteString;
 import com.tdunning.math.stats.TDigest;
 
 import java.nio.ByteBuffer;
@@ -61,14 +62,14 @@ public final class SemanticMetricDistribution implements Distribution {
     }
 
     @Override
-    public java.nio.ByteBuffer getValueAndFlush() {
+    public ByteString getValueAndFlush() {
         TDigest curVal;
         synchronized (this) {
             curVal = distRef.getAndSet(create()); // reset tdigest
         }
         ByteBuffer byteBuffer = ByteBuffer.allocate(curVal.smallByteSize());
         curVal.asSmallBytes(byteBuffer);
-        return byteBuffer;
+        return ByteString.copyFrom(byteBuffer.array());
     }
 
 

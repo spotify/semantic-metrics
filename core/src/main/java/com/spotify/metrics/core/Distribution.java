@@ -24,7 +24,8 @@ package com.spotify.metrics.core;
 import com.codahale.metrics.Counting;
 import com.codahale.metrics.Metric;
 
-import java.nio.ByteBuffer;
+import com.google.protobuf.ByteString;
+
 
 /**
  * {@link Distribution} is a simple interface that allows users to record measurements
@@ -61,6 +62,6 @@ public interface Distribution extends Metric, Counting {
      *
      * @return
      */
-    ByteBuffer getValueAndFlush();
+    ByteString getValueAndFlush();
 
 }

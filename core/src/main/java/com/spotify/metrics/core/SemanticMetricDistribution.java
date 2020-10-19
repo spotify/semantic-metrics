@@ -64,8 +64,9 @@ public final class SemanticMetricDistribution implements Distribution {
     @Override
     public ByteString getValueAndFlush() {
         TDigest curVal;
+        TDigest nextVal = create();
         synchronized (this) {
-            curVal = distRef.getAndSet(create()); // reset tdigest
+            curVal = distRef.getAndSet(nextVal); // reset tdigest
         }
         ByteBuffer byteBuffer = ByteBuffer.allocate(curVal.smallByteSize());
         curVal.asSmallBytes(byteBuffer);

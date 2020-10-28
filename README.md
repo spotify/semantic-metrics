@@ -275,7 +275,7 @@ In addition to the tags that are specified (e.g., "what" in this example), FfwdR
 
 ## Meter
 A meter measures the rate of events over time (e.g., "requests per second").
-In addition to the mean rate, meters also track 1-, 5-, and 15-minute moving
+In addition to the mean rate, meters also track 1- and 5-minute moving
 averages.
 
 For example we have an endpoint that we want to measure how frequent we receive

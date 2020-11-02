@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * From P99.9 to P99.999 the error rate is slightly higher than 2%.
  *
  */
-public final class SemanticMetricDistribution implements Distribution {
+public class SemanticMetricDistribution implements Distribution {
 
     private static final int COMPRESSION_DEFAULT_LEVEL = 100;
     private final AtomicReference<TDigest> distRef;

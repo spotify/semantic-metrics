@@ -30,9 +30,12 @@ import com.codahale.metrics.Metered;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.Sets;
-import com.spotify.ffwd.http.Batch;
+import com.google.protobuf.ByteString;
 import com.spotify.ffwd.http.HttpClient;
+import com.spotify.ffwd.http.model.v2.Batch;
+import com.spotify.ffwd.http.model.v2.Value;
 import com.spotify.metrics.core.DerivingMeter;
+import com.spotify.metrics.core.Distribution;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricFilter;
 import com.spotify.metrics.core.SemanticMetricRegistry;
@@ -274,8 +277,15 @@ public class FastForwardHttpReporter implements AutoCloseable {
             reportDerivingMeter(builder, entry.getValue());
         }
 
+        for (Map.Entry<MetricId, Distribution> entry :
+                registry.getDistributions(FILTER_ALL).entrySet()) {
+            final BatchBuilder builder = createBuilder(points, timestamp, entry.getKey(),
+                    "distribution");
+            reportDistribution(builder, entry.getValue());
+        }
+
         final Map<String, String> commonTags = tagExtractor.addTags(prefix.getTags());
-        final Batch batch = new Batch(commonTags, points);
+        final Batch batch = new Batch(commonTags, createResource(), points);
 
         client.sendBatch(batch).toCompletable().await();
     }
@@ -289,14 +299,25 @@ public class FastForwardHttpReporter implements AutoCloseable {
         return new BatchBuilder(points, timestamp, key, id.getTags(), unit, metricType);
     }
 
+    private static Map<String, String> createResource() {
+        return new HashMap<>();
+    }
+
     private void reportGauge(
-        final BatchBuilder builder, @SuppressWarnings("rawtypes") Gauge value
+            final BatchBuilder builder, @SuppressWarnings("rawtypes") Gauge value
     ) {
         if (value == null) {
             return;
         }
 
         builder.buildPoint(null, convert(value.getValue()));
+    }
+
+    private void reportDistribution(BatchBuilder builder, Distribution distribution) {
+        if (distribution.getCount() == 0) {
+            return;
+        }
+        builder.buildPoint("distribution", distribution.getValueAndFlush());
     }
 
     private double convert(Object value) {
@@ -455,7 +476,13 @@ public class FastForwardHttpReporter implements AutoCloseable {
         }
 
         public void buildPoint(final String stat, final double value) {
-            points.add(new Batch.Point(key, statsMap(stat), value, timestamp));
+            points.add(new Batch.Point(key, statsMap(stat), createResource(),
+                    Value.DoubleValue.create(value), timestamp));
+        }
+
+        public void buildPoint(final String stat, final ByteString value) {
+            points.add(new Batch.Point(key, statsMap(stat), createResource(),
+                    Value.DistributionValue.create(value), timestamp));
         }
 
         private Map<String, String> statsMap(

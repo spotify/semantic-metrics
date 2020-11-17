@@ -1,5 +1,5 @@
 # semantic-metrics
-[![Build Status](https://travis-ci.org/spotify/semantic-metrics.svg?branch=master)](https://travis-ci.org/spotify/semantic-metrics)
+[![Build Status](https://github.com/spotify/semantic-metrics/workflows/JavaCI/badge.svg)](https://github.com/spotify/semantic-metrics/actions?query=workflow%3AJavaCI)
 
 This project contains modifications to the
 [dropwizard metrics](https://github.com/dropwizard/metrics) project.

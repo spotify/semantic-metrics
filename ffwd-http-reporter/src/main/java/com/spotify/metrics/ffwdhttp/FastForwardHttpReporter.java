@@ -419,17 +419,15 @@ public class FastForwardHttpReporter implements AutoCloseable {
             return;
         }
 
-        scheduledFuture = executorService.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    FastForwardHttpReporter.this.report();
-                } catch (final Exception e) {
-                    log.error("Error when trying to report metrics", e);
-                }
+        scheduledFuture = executorService.scheduleWithFixedDelay(() -> {
+            try {
+                FastForwardHttpReporter.this.report();
+            } catch (final Exception e) {
+                log.error("Error when trying to report metrics", e);
             }
         }, 0, duration, unit);
     }
+
 
     public void stop() {
         if (scheduledFuture != null) {
@@ -437,6 +435,21 @@ public class FastForwardHttpReporter implements AutoCloseable {
         }
         if (executorOwner) {
             executorService.shutdown();
+        }
+    }
+
+    public void stopWithFlush() {
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(false);
+        }
+        if (executorOwner) {
+            executorService.shutdown();
+        }
+        try {
+            log.info("Final flush of metrics.");
+            report();
+        } catch (final Exception e) {
+            log.error("Error during final flush of metrics: ", e);
         }
     }
 

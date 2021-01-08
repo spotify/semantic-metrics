@@ -1,6 +1,15 @@
 package com.spotify.metrics.ffwd;
 
-import com.google.common.base.Function;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
@@ -12,30 +21,15 @@ import com.spotify.metrics.core.DerivingMeter;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricRegistry;
 import com.spotify.metrics.tags.EnvironmentTagExtractor;
-import org.jmock.lib.concurrent.DeterministicScheduler;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import org.jmock.lib.concurrent.DeterministicScheduler;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 public class FastForwardReporterTest {
     private static final int REPORTING_PERIOD = 50;
@@ -72,12 +66,9 @@ public class FastForwardReporterTest {
     public void shouldStopReportingAfterStop() throws Exception {
         final AtomicInteger counter = new AtomicInteger(0);
 
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                counter.incrementAndGet();
-                return null;
-            }
+        doAnswer(invocation -> {
+            counter.incrementAndGet();
+            return null;
         }).when(fastForward).send(any(Metric.class));
 
         reporter.start();
@@ -92,7 +83,7 @@ public class FastForwardReporterTest {
 
         executorService.tick(REPORTING_PERIOD * 2, TimeUnit.MILLISECONDS);
 
-        assertThat(counter.get(), equalTo(shouldHaveStoppedNow));
+        assertEquals(counter.get(), shouldHaveStoppedNow);
     }
 
     @Test
@@ -117,12 +108,7 @@ public class FastForwardReporterTest {
 
         // initialise a modifiable map with all entries flagged as 'not found'
         Map<String, Boolean> foundStats =
-            new HashMap<>(Maps.asMap(ImmutableSet.of("1m", "5m"), new Function<String, Boolean>() {
-                @Override
-                public Boolean apply(String input) {
-                    return false;
-                }
-            }));
+            new HashMap<>(Maps.asMap(ImmutableSet.of("1m", "5m"), input -> false));
 
         for (Metric metric : metrics) {
             if (metric.getKey().equals("thename")) {
@@ -133,7 +119,7 @@ public class FastForwardReporterTest {
         }
 
         for (String stat : foundStats.keySet()) {
-            assertThat("found " + stat, foundStats.get(stat), is(true));
+            assertEquals("found " + stat, foundStats.get(stat), true);
         }
     }
 
@@ -168,5 +154,64 @@ public class FastForwardReporterTest {
             ImmutableMap.of("metric_type", "counter", "foo", "bar");
 
         assertEquals(expected, argument.getValue().getAttributes());
+    }
+
+    @Test
+    public void shouldNotReportPeriodicallyNoTick() throws Exception {
+        reporter.start();
+
+        verify(fastForward, never()).send(any(Metric.class));
+    }
+
+    @Test
+    public void shouldNotFinalReportAfterStop() throws Exception {
+        final AtomicInteger counter = new AtomicInteger(0);
+
+        doAnswer(invocation -> {
+            counter.incrementAndGet();
+            return null;
+        }).when(fastForward).send(any(Metric.class));
+
+        reporter.start();
+
+        executorService.tick(REPORTING_PERIOD, TimeUnit.MILLISECONDS);
+
+        int counterBeforeStop = counter.get();
+
+        reporter.stop();
+
+        executorService.tick(REPORTING_PERIOD, TimeUnit.MILLISECONDS);
+
+        int counterAfterStop = counter.get();
+
+        executorService.tick(REPORTING_PERIOD * 2, TimeUnit.MILLISECONDS);
+
+        assertEquals(counterBeforeStop, counterAfterStop);
+    }
+
+    @Test
+    public void shouldFinalReportAfterStopWithFlush() throws Exception {
+        final AtomicInteger counter = new AtomicInteger(0);
+
+        doAnswer(invocation -> {
+            counter.incrementAndGet();
+            return null;
+        }).when(fastForward).send(any(Metric.class));
+
+        reporter.start();
+
+        executorService.tick(REPORTING_PERIOD, TimeUnit.MILLISECONDS);
+
+        int counterBeforeStop = counter.get();
+
+        reporter.stopWithFlush();
+
+        executorService.tick(REPORTING_PERIOD, TimeUnit.MILLISECONDS);
+
+        int counterAfterStop = counter.get();
+
+        executorService.tick(REPORTING_PERIOD * 2, TimeUnit.MILLISECONDS);
+
+        assert(counterBeforeStop < counterAfterStop);
     }
 }

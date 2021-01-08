@@ -430,6 +430,21 @@ public class FastForwardReporter implements AutoCloseable {
         }
     }
 
+    public void stopWithFlush() {
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(false);
+        }
+        if (executorOwner) {
+            executorService.shutdown();
+        }
+        try {
+            log.info("Final flush of metrics.");
+            report();
+        } catch (final Exception e) {
+            log.error("Error during final flush of metrics: ", e);
+        }
+    }
+
     @Override
     public void close() {
         stop();

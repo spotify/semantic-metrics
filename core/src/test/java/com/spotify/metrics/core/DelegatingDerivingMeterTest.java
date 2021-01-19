@@ -1,25 +1,20 @@
 package com.spotify.metrics.core;
 
-import com.codahale.metrics.Clock;
-import com.codahale.metrics.Meter;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeMatcher;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class DelegatingDerivingMeterTest {
-    DelegatingDerivingMeter meter;
+import com.codahale.metrics.Clock;
+import com.codahale.metrics.Meter;
+import java.util.concurrent.TimeUnit;
+import org.junit.Before;
+import org.junit.Test;
 
-    Meter delegate;
+public class DelegatingDerivingMeterTest {
+    private DelegatingDerivingMeter meter;
+
+    private Meter delegate;
 
     @Before
     public void setUp() throws Exception {
@@ -32,7 +27,7 @@ public class DelegatingDerivingMeterTest {
     public void shouldNotCountSingleValue() throws Exception {
         meter.mark(10);
 
-        assertThat(meter.getCount(), equalTo(0L));
+        assertEquals(meter.getCount(), 0L);
     }
 
     @Test
@@ -41,7 +36,7 @@ public class DelegatingDerivingMeterTest {
         meter.mark(20);
         meter.mark(30);
 
-        assertThat(meter.getCount(), equalTo(20L));
+        assertEquals(meter.getCount(), 20L);
     }
 
     @Test
@@ -50,35 +45,35 @@ public class DelegatingDerivingMeterTest {
         meter.mark(20);
         meter.mark(30);
 
-        assertThat(meter.getCount(), equalTo(10L));
+        assertEquals(meter.getCount(), 10L);
     }
 
     @Test
     public void shouldReturnValueFromDelegateForMeanRate() throws Exception {
         setupRateTest();
 
-        assertThat(meter.getMeanRate(), is(greaterThan(300.0)));
+        assertTrue(meter.getMeanRate()> 300.0);
     }
 
     @Test
     public void shouldReturnValueFromDelegateForOneMinuteRate() throws Exception {
         setupRateTest();
 
-        assertThat(meter.getOneMinuteRate(), is(greaterThan(300.0)));
+        assertTrue(meter.getOneMinuteRate() > 300.0);
     }
 
     @Test
     public void shouldReturnValueFromDelegateForFiveMinuteRate() throws Exception {
         setupRateTest();
 
-        assertThat(meter.getFiveMinuteRate(), is(greaterThan(300.0)));
+        assertTrue(meter.getFiveMinuteRate() > 300.0);
     }
 
     @Test
     public void shouldReturnValueFromDelegateForFifteenMinuteRate() throws Exception {
         setupRateTest();
 
-        assertThat(meter.getFifteenMinuteRate(), is(greaterThan(300.0)));
+        assertTrue(meter.getFifteenMinuteRate() > 300.0);
     }
 
     private void setupRateTest() throws InterruptedException {
@@ -91,19 +86,5 @@ public class DelegatingDerivingMeterTest {
         meter.mark(2000);
         // need to 'wait' more than 5 seconds for the Codahale metrics meter to 'tick'.
         when(clock.getTick()).thenReturn(TimeUnit.NANOSECONDS.convert(6, TimeUnit.SECONDS));
-    }
-
-    private Matcher<Double> greaterThan(final double expected) {
-        return new TypeSafeMatcher<Double>() {
-            @Override
-            protected boolean matchesSafely(Double item) {
-                return item > expected;
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("double greater than " + expected);
-            }
-        };
     }
 }

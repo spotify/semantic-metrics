@@ -295,6 +295,29 @@ In addition to the tags that are specified (e.g., "what" and "endpoint" in this 
 | unit        | \<unit\>/s |\<unit\> is what is originally specified as "unit" attribute during declaration. If missing, the value will be set as "n/s". For example if you originally specify .tagged("unit", "request") on a Meter, FfwdReporter emits Meter data points with "unit":"request/s"       |
 | stat | 1m, 5m    | **1m** means the size of the time bucket of the calculated moving average of this data point is 1 minute. **5m** means 5 minutes.         |
 
+
+## Deriving Meter
+A deriving meter takes the derivative of a value that is expected to be monotonically increasing.<BR><BR>
+A typical use case is to get the rate of change of a counter of the total number of events.<BR><BR>
+This implementation ignores updates that decrease the counter value.
+The rationale is that the counter is expected to be monotonically increasing between
+infrequent resets (when a process has been restarted, for example).
+Thus, negative values should only happen on restart and should be safe to discard.
+
+```java
+DerivingMeter derivingMeter = registry.derivingMeter(metric.tagged("what", "incoming-requests").tagged("endpoint", "/v1/list"));
+derivingMeter.mark();
+```
+
+In addition to the tags that are specified (e.g., "what" and "endpoint" in this example), FfwdReporter adds the following tags to each Meter data point:
+
+| tag         | values   | comment |
+|-------------|----------|---------|
+| metric_type | deriving_meter |         |
+| unit        | \<unit\>/s |\<unit\> is set to what is specified during declaration. For example, if you specify .tagged("unit", "request") on a DerivingMeter, FfwdReporter emits DerivingMeter data points with "unit":"request/s". Default: "n/s".|
+| stat | 1m, 5m    | \<stat\> means the size of the time bucket of the calculated moving average of this data point. **1m** is 1 minute. **5m** means 5 minutes.         |
+
+
 ## Histogram
 A histogram measures the statistical distribution of values in a stream of
 data.

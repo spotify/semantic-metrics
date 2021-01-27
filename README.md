@@ -295,6 +295,32 @@ In addition to the tags that are specified (e.g., "what" and "endpoint" in this 
 | unit        | \<unit\>/s |\<unit\> is what is originally specified as "unit" attribute during declaration. If missing, the value will be set as "n/s". For example if you originally specify .tagged("unit", "request") on a Meter, FfwdReporter emits Meter data points with "unit":"request/s"       |
 | stat | 1m, 5m    | **1m** means the size of the time bucket of the calculated moving average of this data point is 1 minute. **5m** means 5 minutes.         |
 
+
+## Deriving Meter
+It is a regular meter under the hood with slight difference.
+It takes the derivative of a value that is expected to be almost monotonically
+increasing.
+<BR>A typical use case is to get the rate of change of a counter of the total number of
+occurrences of something.
+<BR>Implementation will ignore updates that are a decrease of the counter value. The rationale is
+that the counter is expected to be monotonically increasing between infrequent resets (such as
+when a process has been restarted). Thus, negative values should only happen on restart, and it
+should be safe to discard those.
+
+```java
+DerivingMeter derivingMeter = registry.derivingMeter(metric.tagged("what", "incoming-requests").tagged("endpoint", "/v1/list"));
+derivingMeter.mark();
+```
+
+In addition to the tags that are specified (e.g., "what" and "endpoint" in this example), FfwdReporter adds the following tags to each Meter data point:
+
+| tag         | values   | comment |
+|-------------|----------|---------|
+| metric_type | deriving_meter |         |
+| unit        | \<unit\>/s |\<unit\> is what is originally specified as "unit" attribute during declaration. If missing, the value will be set as "n/s". For example if you originally specify .tagged("unit", "request") on a DerivingMeter, FfwdReporter emits DerivingMeter data points with "unit":"request/s"       |
+| stat | 1m, 5m    | **1m** means the size of the time bucket of the calculated moving average of this data point is 1 minute. **5m** means 5 minutes.         |
+
+
 ## Histogram
 A histogram measures the statistical distribution of values in a stream of
 data.

@@ -21,11 +21,16 @@ import com.spotify.metrics.core.DerivingMeter;
 import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricRegistry;
 import com.spotify.metrics.tags.EnvironmentTagExtractor;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.jmock.lib.concurrent.DeterministicScheduler;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +51,7 @@ public class FastForwardReporterTest {
         executorService = new DeterministicScheduler();
         reporter = FastForwardReporter
             .forRegistry(registry)
+            .prefix("test")
             .schedule(TimeUnit.MILLISECONDS, REPORTING_PERIOD)
             .fastForward(fastForward)
             .executorService(executorService)
@@ -111,7 +117,7 @@ public class FastForwardReporterTest {
             new HashMap<>(Maps.asMap(ImmutableSet.of("1m", "5m"), input -> false));
 
         for (Metric metric : metrics) {
-            if (metric.getKey().equals("thename")) {
+            if (metric.getKey().equals("test.thename")) {
                 String stat = metric.getAttributes().get("stat");
 
                 foundStats.put(stat, true);
@@ -213,5 +219,30 @@ public class FastForwardReporterTest {
         executorService.tick(REPORTING_PERIOD * 2, TimeUnit.MILLISECONDS);
 
         assert(counterBeforeStop < counterAfterStop);
+    }
+
+    @Test
+    public void testKeyValuePrefixAddedOnce() throws Exception {
+        ArgumentCaptor<Metric> argumentCaptor = ArgumentCaptor.forClass(Metric.class);
+
+        doNothing().when(fastForward).send(argumentCaptor.capture());
+
+        MetricId name = MetricId.build("thename");
+
+        registry.meter(name);
+
+        reporter.start();
+
+        executorService.tick(REPORTING_PERIOD + REPORTING_PERIOD / 3, TimeUnit.MILLISECONDS);
+        verify(fastForward, atLeastOnce()).send(any(Metric.class));
+
+        Set<String> expectedKeys = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+        "test.hi", "test.thename", "test.thename", "test.thename", "test.hi", "test.thename",
+        "test.thename", "test.thename")));
+
+        Set<String> actualKeys = argumentCaptor.getAllValues().stream().map(Metric::getKey)
+        .collect(Collectors.toSet());
+
+        assertEquals(expectedKeys, actualKeys);
     }
 }

@@ -297,6 +297,7 @@ public class FastForwardReporter implements AutoCloseable {
     }
 
     private void reportMetered(MetricId key, Meter value) {
+        MetricId originalKey = key;
         key = MetricId.join(prefix, key);
 
         final Metric m = FastForward
@@ -305,7 +306,7 @@ public class FastForwardReporter implements AutoCloseable {
             .attribute(METRIC_TYPE, "meter");
 
         reportMetered(m, value);
-        reportCounter(key, value);
+        reportCounter(originalKey, value);
     }
 
     private void reportTimer(MetricId key, Timer value) {

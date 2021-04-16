@@ -342,8 +342,6 @@ In addition to the tags that are specified (e.g., "what" and "endpoint" in this 
 Note that added custom percentiles will show up in the stat tag.
 
 ### Histogram with ttl
-
-
 `HistogramWithTtl` changes the behavior of the default codahale histogram when update rate is low. If the update rate goes below a certain threshold for a certain time, all samples that have been received during that time are used instead of the random sample that is used in the default histogram implementation. When update rates are above the threshold, the default implementation is used.
 
 **What problem does it solve?**
@@ -353,6 +351,46 @@ The default histogram implementation uses a random sampling algorithm with expon
 This was authored by Johan Buratti. 
 
 
+## Distribution
+Distribution is a simple interface that allows users to record measurements to compute rank statistics on data distribution, not just a local source.
+
+Every implementation should produce a serialized data sketch in a byteBuffer as this metric point value.
+
+Unlike traditional histograms, distribution doesn't require a predefined percentile value. Data recorded can be used upstream to compute any percentile.
+
+Distribution doesn't require any binning configuration. Just get an instance through SemanticMetricBuilder and record data.
+
+Distribution is a good choice if you care about percentile accuracy in a distributed environment and you want to rely on P99 to set SLOs.
+
+For example, this distribution will measure the size of messages in bytes.
+
+```java
+Distribution distribution = registry.distribution(metric.tagged("what", "distribution-message-size", "unit", Units.BYTE));
+// fetch the size of the message
+int size = getMessageSize(response);
+distribution.record(size);
+```
+In addition to the tags that are specified (e.g., "what" and "unit" in this example), FfwdReporter adds the following tags to each Histogram data point:
+
+| tag         | values                         | comment                       |
+|-------------|--------------------------------|-------------------------------|
+| metric_type | distribution                   |                               |
+| tdigeststat | P50, P75, P99                  |**P50:** the value at the 50th percentile in the distribution<br>**P75:** the value at the 75th percentile in the distribution<br>**P99:** the value at the 99th percentile in the distribution |
+
+
+**What problem does it solve?**
+
+* Accurate Aggregated Histogram Data
+
+This can record data and send data sketches. A sketch of a dataset is a small data structure that lets you approximate certain characteristics of the original dataset. Sketches are
+ used to compute rank based statistics such as percentile. Sketches are mergeable and can be used
+to compute any percentile on the entire data distribution.
+
+* Support Sophisticated Data-point Values
+
+With distributions we are able to support sophisticated data point values, such as the Open-census metric distribution.
+
+Authored by Adele Okoubo.
 
 ## Timer
 A timer measures both the rate that a particular piece of code is called and

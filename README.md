@@ -321,8 +321,8 @@ In addition to the tags that are specified (e.g., "what" and "endpoint" in this 
 ## Histogram
 A histogram measures the statistical distribution of values in a stream of
 data.
-In addition to minimum, maximum, mean, etc., it also measures median, 75th,
-90th, 95th, 98th, 99th, and 99.9th percentiles.
+It measures minimum, maximum, mean, median, standard deviation, as well as 75th
+and 99th percentiles.
 
 For example this histogram will measure the size of responses in bytes.
 

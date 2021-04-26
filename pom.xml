@@ -42,7 +42,6 @@
     <module>api</module>
     <module>core</module>
     <module>ffwd-reporter</module>
-    <module>ffwd-http-reporter</module>
     <module>examples</module>
     <module>guava</module>
     <module>remote</module>
@@ -71,11 +70,6 @@
       <dependency>
         <groupId>com.spotify.metrics</groupId>
         <artifactId>semantic-metrics-ffwd-reporter</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.spotify.metrics</groupId>
-        <artifactId>semantic-metrics-ffwd-http-reporter</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

@@ -43,9 +43,5 @@
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
-      <dependency>
-          <groupId>com.spotify.metrics</groupId>
-          <artifactId>semantic-metrics-ffwd-http-reporter</artifactId>
-      </dependency>
   </dependencies>
 </project>

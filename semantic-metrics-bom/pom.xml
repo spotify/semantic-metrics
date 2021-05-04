@@ -35,11 +35,6 @@
       </dependency>
       <dependency>
         <groupId>com.spotify.metrics</groupId>
-        <artifactId>semantic-metrics-ffwd-http-reporter</artifactId>
-        <version>${project.parent.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.spotify.metrics</groupId>
         <artifactId>semantic-metrics-guava</artifactId>
         <version>${project.parent.version}</version>
       </dependency>

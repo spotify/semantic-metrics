@@ -44,6 +44,7 @@
     <module>ffwd-reporter</module>
     <module>examples</module>
     <module>guava</module>
+    <module>jmh-benchmarks</module>
     <module>remote</module>
     <module>semantic-metrics-bom</module>
   </modules>

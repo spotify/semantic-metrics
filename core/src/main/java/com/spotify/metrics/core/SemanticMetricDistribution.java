@@ -23,10 +23,8 @@ package com.spotify.metrics.core;
 
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.protobuf.ByteString;
 import com.tdunning.math.stats.TDigest;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -52,7 +50,8 @@ public class SemanticMetricDistribution implements Distribution {
     private static final int COMPRESSION_DEFAULT_LEVEL = 100;
     private final AtomicReference<TDigest> distRef;
 
-    SemanticMetricDistribution() {
+    @VisibleForTesting
+    public SemanticMetricDistribution() {
         this.distRef = new AtomicReference<>(create());
     }
 
@@ -62,17 +61,14 @@ public class SemanticMetricDistribution implements Distribution {
     }
 
     @Override
-    public ByteString getValueAndFlush() {
+    public TDigest getDigestAndFlush() {
         TDigest curVal;
         TDigest nextVal = create();
         synchronized (this) {
             curVal = distRef.getAndSet(nextVal); // reset tdigest
         }
-        ByteBuffer byteBuffer = ByteBuffer.allocate(curVal.smallByteSize());
-        curVal.asSmallBytes(byteBuffer);
-        return ByteString.copyFrom(byteBuffer.array());
+        return curVal;
     }
-
 
     @Override
     public long getCount() {

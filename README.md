@@ -293,6 +293,7 @@ In addition to the tags that are specified (e.g., "what" and "endpoint" in this 
 | unit        | \<unit\>/s |\<unit\> is what is originally specified as "unit" attribute during declaration. If missing, the value will be set as "n/s". For example if you originally specify .tagged("unit", "request") on a Meter, FfwdReporter emits Meter data points with "unit":"request/s"       |
 | stat | 1m, 5m    | **1m** means the size of the time bucket of the calculated moving average of this data point is 1 minute. **5m** means 5 minutes.         |
 
+**NOTE:** Meter also reports the meter counter value to allow platforms to derive rates using the monotonically increasing count instead of only aggregating the rate computed by the meter itself. It is useful for applications to be able to report both count and rate using a meter.
 
 ## Deriving Meter
 A deriving meter takes the derivative of a value that is expected to be monotonically increasing.<BR><BR>
@@ -412,6 +413,7 @@ In addition to the tags that are specified (e.g., "what" and "endpoint" in this 
 |-------------|--------------------------------|-------------------------------|
 | metric_type | timer                          |                               |
 | unit        | ns                             |                               |
+  
 **NOTE:** Timer is really just a combination of a Histogram and a Meter, so apart from the tags above, combination of both Histogram and Meter tags will be included.
 
 # Why Semantic Metrics?

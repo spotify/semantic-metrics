@@ -35,7 +35,7 @@ public interface SemanticMetricBuilder<T extends Metric> {
     SemanticMetricBuilder<Distribution> DISTRIBUTION = new SemanticMetricBuilder<Distribution>() {
         @Override
         public Distribution newMetric() {
-            return new SemanticMetricDistribution();
+            return new ConcurrentDistribution();
         }
 
         @Override

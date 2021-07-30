@@ -3,4 +3,4 @@
 target/
 *.versionsBackup
 *.properties
-*.iml
+.iml

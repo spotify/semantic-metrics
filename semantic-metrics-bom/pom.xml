@@ -11,6 +11,32 @@
     Semantic Metrics: Bill Of Materials
   </description>
 
+  <developers>
+    <developer>
+      <id>udoprog</id>
+      <name>John-John Tedro</name>
+      <email>udoprog@spotify.com</email>
+    </developer>
+  </developers>
+
+  <url>https://github.com/spotify/semantic-metrics</url>
+
+  <scm>
+    <connection>scm:git:git://github.com/spotify/semantic-metrics.git</connection>
+    <developerConnection>scm:git:git@github.com:spotify/semantic-metrics.git
+    </developerConnection>
+    <url>https://github.com/spotify/semantic-metrics</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
   <dependencyManagement>
     <dependencies>
       <dependency>

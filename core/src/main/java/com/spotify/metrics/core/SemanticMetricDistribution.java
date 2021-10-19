@@ -80,8 +80,8 @@ public class SemanticMetricDistribution implements Distribution {
     }
 
     @VisibleForTesting
-    TDigest tDigest() {
-        return distRef.get();
+    synchronized int getDigestHashCode() {
+        return distRef.get().hashCode();
     }
 
     private TDigest create() {

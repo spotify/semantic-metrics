@@ -350,7 +350,7 @@ The default histogram implementation uses a random sampling algorithm with expon
 This was authored by Johan Buratti. 
 
 
-## Distribution
+## Distribution [Experimental]
 Distribution is a simple interface that allows users to record measurements to compute rank statistics on data distribution, not just a local source.
 
 Every implementation should produce a serialized data sketch in a byteBuffer as this metric point value.

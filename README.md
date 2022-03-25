@@ -471,3 +471,5 @@ To release, first run:
 You will be prompted for the release version and the next development version. On success, follow with:
 
 ``mvn -P release release:perform``
+  
+When you have finished these steps, please "Draft a new release" in Github and list the included PRs (aside from changes to documentation). 

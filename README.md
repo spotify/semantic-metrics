@@ -350,7 +350,19 @@ The default histogram implementation uses a random sampling algorithm with expon
 This was authored by Johan Buratti. 
 
 
-## Distribution [Experimental]
+## Distribution [DO NOT USE]
+
+**Distributions are no longer supported. The code to create them and the Heroic code to query them still exists, however they are being retired and no further adoption should occur.** 
+
+**Heroic is being retired in favor of OpenSource alternatives, and this distribution implementation will not be portable to the future TSDB/query interface. Since onle a few services with a few metrics had experimented with distributions, the choice was made to halt adoption now, to reduce the pain of conversion to a proper histrogram later.**
+
+For questions about this, please reach out in the #monitoring-users slack channel. 
+
+
+*For historical refrence only* 
+
+**DO NOT USE**
+
 Distribution is a simple interface that allows users to record measurements to compute rank statistics on data distribution, not just a local source.
 
 Every implementation should produce a serialized data sketch in a byteBuffer as this metric point value.

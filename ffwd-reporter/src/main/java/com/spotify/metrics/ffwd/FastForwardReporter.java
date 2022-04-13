@@ -371,7 +371,7 @@ public class FastForwardReporter implements AutoCloseable {
         ByteString byteString = distribution.getValueAndFlush();
         Value value = Value.distributionValue(byteString);
         send(metric.value(value));
-        log.warn("Using DEPRICATED 'distribution' metric_type, this is no longer supported, please cease use");
+        log.warn("Using DEPRICATED 'distribution' metric_type, this is no longer supported");
     }
 
     private String getUnit(final Metric m) {

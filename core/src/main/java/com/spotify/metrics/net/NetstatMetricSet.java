@@ -37,6 +37,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * A set of gauges for collecting metrics mostly related to TCP packet loss. These metrics are
+ * parsed and extracted from /proc/net/snmp and /proc/net/netstat.
+ *
+ * <p>Note: These gauges will only report correctly on *nix system. Will fail silently and emit 0
+ * values for all metrics when running on other platforms.</p>
+ */
 public class NetstatMetricSet implements SemanticMetricSet {
 
     private static final String SPACES = "\\s+";

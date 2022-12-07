@@ -11,7 +11,6 @@ import com.spotify.metrics.core.MetricId;
 import com.spotify.metrics.core.SemanticMetricSet;
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

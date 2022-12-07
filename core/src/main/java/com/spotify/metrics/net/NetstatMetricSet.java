@@ -1,5 +1,7 @@
 package com.spotify.metrics.net;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.codahale.metrics.Metric;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
@@ -29,7 +31,7 @@ public class NetstatMetricSet implements SemanticMetricSet {
 
     @VisibleForTesting
     NetstatMetricSet(final Supplier<Data> dataSupplier) {
-        this.dataSupplier = dataSupplier;
+        this.dataSupplier = checkNotNull(dataSupplier, "dataSupplier");
     }
 
     @Override
@@ -112,7 +114,7 @@ public class NetstatMetricSet implements SemanticMetricSet {
                     }
                 }
             }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             return Collections.emptyMap();
         }
 

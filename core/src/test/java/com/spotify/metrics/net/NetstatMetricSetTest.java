@@ -71,6 +71,20 @@ public class NetstatMetricSetTest {
     }
 
     @Test
+    public void testMalformedSnmpFileValues() {
+        NetstatMetricSet netstatMetricSet = new NetstatMetricSet(
+            () -> NetstatMetricSet.readData(absolutePath("proc/net/netstat"),
+                absolutePath("proc/net/snmp.invalid")));
+
+        registry.registerAll(netstatMetricSet);
+        assertEquals(0L, valueFrom(registry.getGauges(filter("segments-retransmitted"))));
+        assertEquals(0L, valueFrom(registry.getGauges(filter("bad-segments-received"))));
+        assertEquals(2677L, valueFrom(registry.getGauges(filter("tcp-timeouts"))));
+        assertEquals(2055L, valueFrom(registry.getGauges(filter("tcp-lost-retransmit"))));
+        assertEquals(0L, valueFrom(registry.getGauges(filter("tcp-syn-retrans"))));
+    }
+
+    @Test
     public void testMemoizingSupplier() {
         AtomicInteger supplyCounter = new AtomicInteger();
         Supplier<NetstatMetricSet.Data> dataSupplier = Suppliers.memoizeWithExpiration(() -> {

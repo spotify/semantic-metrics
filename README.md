@@ -220,6 +220,7 @@ public class Entry {
         app.start();
 
         app.join();
+        reporter.stopWithFlush();
         System.exit(0);
     }
 }

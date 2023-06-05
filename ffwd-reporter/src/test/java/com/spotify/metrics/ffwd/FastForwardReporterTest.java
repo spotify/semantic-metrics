@@ -245,4 +245,26 @@ public class FastForwardReporterTest {
 
         assertEquals(expectedKeys, actualKeys);
     }
+
+    @Test
+    public void shouldNotReportEmptyHistogramsAndTimers() throws Exception {
+        ArgumentCaptor<Metric> argumentCaptor = ArgumentCaptor.forClass(Metric.class);
+
+        doNothing().when(fastForward).send(argumentCaptor.capture());
+
+        MetricId name = MetricId.build("thename");
+
+        registry.histogram(name.tagged("histogram", "true"));
+        registry.timer(name.tagged("timer", "true"));
+
+        reporter.start();
+
+        executorService.tick(REPORTING_PERIOD + REPORTING_PERIOD / 3, TimeUnit.MILLISECONDS);
+        verify(fastForward, atLeastOnce()).send(any(Metric.class));
+
+        Set<String> actualKeys = argumentCaptor.getAllValues().stream().map(Metric::getKey)
+                .collect(Collectors.toSet());
+
+        assertEquals(new HashSet<>(Arrays.asList("test.hi")), actualKeys);
+    }
 }

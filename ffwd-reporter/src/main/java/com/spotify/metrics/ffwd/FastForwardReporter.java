@@ -286,6 +286,11 @@ public class FastForwardReporter implements AutoCloseable {
     }
 
     private void reportHistogram(MetricId key, Histogram value) {
+        final Snapshot snapshot = value.getSnapshot();
+        if (snapshot.size() == 0) {
+            return;
+        }
+
         key = MetricId.join(prefix, key);
 
         final Metric m = FastForward
@@ -293,7 +298,7 @@ public class FastForwardReporter implements AutoCloseable {
             .attributes(key.getTags())
             .attribute(METRIC_TYPE, "histogram");
 
-        reportHistogram(m, value.getSnapshot());
+        reportHistogram(m, snapshot);
     }
 
     private void reportMetered(MetricId key, Meter value) {
@@ -310,6 +315,11 @@ public class FastForwardReporter implements AutoCloseable {
     }
 
     private void reportTimer(MetricId key, Timer value) {
+        final Snapshot snapshot = value.getSnapshot();
+        if (snapshot.size() == 0) {
+            return;
+        }
+
         key = MetricId.join(prefix, key);
 
         final Metric m = FastForward
@@ -319,7 +329,7 @@ public class FastForwardReporter implements AutoCloseable {
             .attribute("unit", "ns");
 
         reportMetered(m, value);
-        reportHistogram(m, value.getSnapshot());
+        reportHistogram(m, snapshot);
     }
 
     private void reportDerivingMeter(MetricId key, DerivingMeter value) {

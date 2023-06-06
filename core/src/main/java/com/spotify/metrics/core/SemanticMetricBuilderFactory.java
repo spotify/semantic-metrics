@@ -30,6 +30,7 @@
 
 package com.spotify.metrics.core;
 
+import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.Reservoir;
@@ -63,6 +64,20 @@ public class SemanticMetricBuilderFactory {
             @Override
             public boolean isInstance(final Metric metric) {
                 return Histogram.class.isInstance(metric);
+            }
+        };
+    }
+
+    public static <T> SemanticMetricBuilder<Gauge<T>> gauge(final Supplier<Gauge<T>> gauge) {
+        return new SemanticMetricBuilder<Gauge<T>>() {
+            @Override
+            public Gauge<T> newMetric() {
+                return gauge.get();
+            }
+
+            @Override
+            public boolean isInstance(Metric metric) {
+                return Gauge.class.isInstance(metric);
             }
         };
     }

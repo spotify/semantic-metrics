@@ -1,6 +1,5 @@
 package com.spotify.metrics.core;
 
-import com.tdunning.math.stats.TDigest;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,11 +32,11 @@ public class SemanticMetricDistributionTest {
     @Test
     public void testGetValueAndFlush(){
         Arrays.stream(period1Data).forEach(t->distribution.record(t));
-        TDigest periode1tDigest = distribution.tDigest();
+        int periode1tDigest = distribution.getDigestHashCode();
         distribution.getValueAndFlush();
         Arrays.stream(period1Data).forEach(t->distribution.record(t) );
         assertEquals(period1Data.length, distribution.getCount());
-        TDigest periode2Digest = distribution.tDigest();
+        int periode2Digest = distribution.getDigestHashCode();
         assertNotEquals(periode1tDigest,periode2Digest);
     }
 

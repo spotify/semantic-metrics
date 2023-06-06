@@ -27,7 +27,6 @@ import com.google.protobuf.ByteString;
 import com.tdunning.math.stats.TDigest;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Semantic Metric implementation of {@link Distribution}.
@@ -50,15 +49,15 @@ import java.util.concurrent.atomic.AtomicReference;
 public class SemanticMetricDistribution implements Distribution {
 
     private static final int COMPRESSION_DEFAULT_LEVEL = 100;
-    private final AtomicReference<TDigest> distRef;
+    private volatile TDigest dist;
 
     SemanticMetricDistribution() {
-        this.distRef = new AtomicReference<>(create());
+        this.dist = create();
     }
 
     @Override
     public synchronized void record(double val) {
-        distRef.get().add(val);
+        dist.add(val);
     }
 
     @Override
@@ -66,7 +65,8 @@ public class SemanticMetricDistribution implements Distribution {
         TDigest curVal;
         TDigest nextVal = create();
         synchronized (this) {
-            curVal = distRef.getAndSet(nextVal); // reset tdigest
+            curVal = dist;
+            dist = nextVal; // reset tdigest
         }
         ByteBuffer byteBuffer = ByteBuffer.allocate(curVal.smallByteSize());
         curVal.asSmallBytes(byteBuffer);
@@ -75,13 +75,14 @@ public class SemanticMetricDistribution implements Distribution {
 
 
     @Override
-    public long getCount() {
-        return distRef.get().size();
+    // This needs to be synchronized because the dist object is not thread-safe
+    public synchronized long getCount() {
+        return dist.size();
     }
 
     @VisibleForTesting
     TDigest tDigest() {
-        return distRef.get();
+        return dist;
     }
 
     private TDigest create() {

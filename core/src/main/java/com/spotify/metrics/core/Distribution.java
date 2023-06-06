@@ -25,6 +25,9 @@ import com.codahale.metrics.Counting;
 import com.codahale.metrics.Metric;
 
 import com.google.protobuf.ByteString;
+import com.tdunning.math.stats.TDigest;
+
+import java.nio.ByteBuffer;
 
 
 /**
@@ -62,6 +65,16 @@ public interface Distribution extends Metric, Counting {
      *
      * @return
      */
-    ByteString getValueAndFlush();
+    default ByteString getValueAndFlush() {
+        return getValue(getDigestAndFlush());
+    }
+
+    static ByteString getValue(final TDigest digest) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(digest.smallByteSize());
+        digest.asSmallBytes(byteBuffer);
+        return ByteString.copyFrom(byteBuffer.array());
+    }
+
+    TDigest getDigestAndFlush();
 
 }

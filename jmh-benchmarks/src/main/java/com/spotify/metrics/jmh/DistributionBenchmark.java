@@ -21,13 +21,12 @@
 
 package com.spotify.metrics.jmh;
 
-import com.codahale.metrics.Histogram;
+import com.spotify.metrics.core.ConcurrentDistribution;
 import com.spotify.metrics.core.Distribution;
-import com.spotify.metrics.core.SemanticMetricBuilder;
+import com.spotify.metrics.core.SemanticMetricDistribution;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Group;
 import org.openjdk.jmh.annotations.GroupThreads;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -39,76 +38,69 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
 
-@State(Scope.Group)
-@BenchmarkMode(Mode.All)
+@State(Scope.Benchmark)
+@BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 2, warmups = 1)
+@Fork(value = 1, warmups = 1)
 @Measurement(time = 10, iterations = 5)
-@Warmup(time = 10, iterations = 2)
+@Warmup(time = 10, iterations = 1)
 public class DistributionBenchmark {
 
-    private Distribution distribution;
-    private Histogram histogram;
+    private Distribution sync;
+    private Distribution conc;
 
     @Setup
     public void setUp() {
-        distribution = SemanticMetricBuilder.DISTRIBUTION.newMetric();
-        histogram = SemanticMetricBuilder.HISTOGRAMS.newMetric();
+        sync = new SemanticMetricDistribution();
+        conc = new ConcurrentDistribution();
     }
 
     @Benchmark
-    @Group("dist1")
     @GroupThreads(1)
-    public void distThreads1() {
-        distribution.record(42.0);
+    public void sync1() {
+        sync.record(42.0);
     }
 
     @Benchmark
-    @Group("dist2")
     @GroupThreads(2)
-    public void dist2() {
-        distribution.record(42.0);
+    public void sync2() {
+        sync.record(42.0);
     }
 
     @Benchmark
-    @Group("dist4")
     @GroupThreads(4)
-    public void distThreads4() {
-        distribution.record(42.0);
+    public void sync4() {
+        sync.record(42.0);
     }
 
     @Benchmark
-    @Group("dist8")
     @GroupThreads(8)
-    public void distThreads8() {
-        distribution.record(42.0);
+    public void sync8() {
+        sync.record(42.0);
     }
+
     @Benchmark
-    @Group("hist1")
     @GroupThreads(1)
-    public void histThreads1() {
-        histogram.update(42);
+    public void conc1() {
+        conc.record(42.0);
     }
 
     @Benchmark
-    @Group("hist2")
     @GroupThreads(2)
-    public void hist2() {
-        histogram.update(42);
+    public void conc2() {
+        conc.record(42.0);
     }
 
     @Benchmark
-    @Group("hist4")
     @GroupThreads(4)
-    public void histThreads4() {
-        histogram.update(42);
+    public void conc4() {
+        conc.record(42.0);
     }
 
     @Benchmark
-    @Group("hist8")
     @GroupThreads(8)
-    public void histThreads8() {
-        histogram.update(42);
+    public void conc8() {
+        conc.record(42.0);
     }
 
 }

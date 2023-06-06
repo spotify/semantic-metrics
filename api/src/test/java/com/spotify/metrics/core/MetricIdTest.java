@@ -18,7 +18,7 @@ public class MetricIdTest {
     final String key = "key";
 
     @Test
-    public void testEmpty() throws Exception {
+    public void testEmpty() {
         assertEquals(MetricId.EMPTY_TAGS, MetricId.EMPTY.getTags());
         assertNull(MetricId.EMPTY.getKey());
         assertEquals(MetricId.EMPTY_TAGS, new MetricId().getTags());
@@ -171,5 +171,17 @@ public class MetricIdTest {
         HashMap<String, String> other = new HashMap<>();
         other.put("k", "v");
         MetricId.EMPTY.tagged(other).getTags().put("x", "y");
+    }
+
+    @Test
+    public void testMetricIdBuildSingleParameter() {
+        MetricId metricId = MetricId.build("foo");
+        assertEquals("foo", metricId.getKey());
+    }
+
+    @Test
+    public void testMetricIdBuildMultipleParameters() {
+        MetricId metricId = MetricId.build("foo", "bar", "baz", "biz");
+        assertEquals("foo.bar.baz.biz", metricId.getKey());
     }
 }

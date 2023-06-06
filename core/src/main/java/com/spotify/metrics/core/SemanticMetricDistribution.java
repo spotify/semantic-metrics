@@ -75,7 +75,7 @@ public class SemanticMetricDistribution implements Distribution {
 
 
     @Override
-    public long getCount() {
+    public synchronized long getCount() {
         return distRef.get().size();
     }
 

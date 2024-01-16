@@ -115,6 +115,16 @@ public class MemoryUsageGaugeSet implements SemanticMetricSet {
                 return memoryUsageSupplier.get().getCommitted();
             }
         });
+
+        gauges.put(nonHeap.tagged("memory_category", "used_ratio"), new Gauge<Long>() {
+            @Override
+            public Long getValue() {
+                if (memoryUsageSupplier.get().getMax() <= 0) {
+                    return 1L;
+                }
+                return memoryUsageSupplier.get().getUsed() / memoryUsageSupplier.get().getMax();
+            }
+        });
     }
 
     private interface MemoryUsageSupplier {

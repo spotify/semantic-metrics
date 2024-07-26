@@ -1,6 +1,10 @@
 # semantic-metrics
 [![Build Status](https://github.com/spotify/semantic-metrics/workflows/JavaCI/badge.svg)](https://github.com/spotify/semantic-metrics/actions?query=workflow%3AJavaCI)
 
+# :warning: Deprecation Notice :warning:
+
+**We are no longer accepting feature requests for Semantic Metrics. We will only be releasing security patches going forward until it is archived.**
+
 This project contains modifications to the
 [dropwizard metrics](https://github.com/dropwizard/metrics) project.
 

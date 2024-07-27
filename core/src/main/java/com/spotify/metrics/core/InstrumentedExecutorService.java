@@ -31,15 +31,19 @@
 package com.spotify.metrics.core;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -81,6 +85,35 @@ public class InstrumentedExecutorService implements ExecutorService {
         this.completed = registry.meter(baseMetricIdWithUnit.tagged("what", "completed"));
         this.idle = registry.timer(baseMetricId.tagged("what", "idle"));
         this.duration = registry.timer(baseMetricId.tagged("what", "duration"));
+
+        if (delegate instanceof ThreadPoolExecutor) {
+            ThreadPoolExecutor executor = (ThreadPoolExecutor) delegate;
+            registry.register(baseMetricIdWithUnit.tagged("what", "pool.size"),
+                (Gauge<Integer>) executor::getPoolSize);
+            registry.register(baseMetricIdWithUnit.tagged("what", "pool.core"),
+                (Gauge<Integer>) executor::getCorePoolSize);
+            registry.register(baseMetricIdWithUnit.tagged("what", "pool.max"),
+                (Gauge<Integer>) executor::getMaximumPoolSize);
+            final BlockingQueue<Runnable> queue = executor.getQueue();
+            registry.register(baseMetricIdWithUnit.tagged("what", "tasks.active"),
+                (Gauge<Integer>) executor::getActiveCount);
+            registry.register(baseMetricIdWithUnit.tagged("what", "tasks.completed"),
+                (Gauge<Long>) executor::getCompletedTaskCount);
+            registry.register(baseMetricIdWithUnit.tagged("what", "tasks.queued"),
+                (Gauge<Integer>) queue::size);
+            registry.register(baseMetricIdWithUnit.tagged("what", "tasks.capacity"),
+                (Gauge<Integer>) queue::remainingCapacity);
+        } else if (delegate instanceof ForkJoinPool) {
+            ForkJoinPool forkJoinPool = (ForkJoinPool) delegate;
+            registry.register(baseMetricIdWithUnit.tagged("what", "tasks.stolen"),
+                (Gauge<Long>) forkJoinPool::getStealCount);
+            registry.register(baseMetricIdWithUnit.tagged("what", "tasks.queued"),
+                (Gauge<Long>) forkJoinPool::getQueuedTaskCount);
+            registry.register(baseMetricIdWithUnit.tagged("what", "threads.active"),
+                (Gauge<Integer>) forkJoinPool::getActiveThreadCount);
+            registry.register(baseMetricIdWithUnit.tagged("what", "threads.running"),
+                (Gauge<Integer>) forkJoinPool::getRunningThreadCount);
+        }
     }
 
     /**
